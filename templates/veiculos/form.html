@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <a href="{% url 'veiculos:lista' %}">Viaturas</a>
+  <span>/</span>
+  <strong>{{ titulo }}</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2>{{ titulo }}</h2>
+    <p>Preencha os dados do veículo, vinculação de setor e parâmetros de revisão</p>
+  </div>
+  <div>
+    <a href="{% url 'veiculos:lista' %}" class="pf-btn pf-btn-secondary">
+      <i class="fas fa-arrow-left"></i> Voltar à Lista
+    </a>
+  </div>
+</div>
+
+<div class="pf-card">
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="pf-card-header">
+      <div class="pf-card-title">
+        <i class="fas fa-car"></i> Dados Cadastrais do Veículo
+      </div>
+    </div>
+
+    <div class="pf-form-grid">
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.placa.id_for_label }}" class="required">{{ form.placa.label }}</label>
+          {{ form.placa }}
+          <small class="pf-small">{{ form.placa.help_text }}</small>
+          {% if form.placa.errors %}<div class="pf-error-text">{{ form.placa.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.marca.id_for_label }}" class="required">{{ form.marca.label }}</label>
+          {{ form.marca }}
+          {% if form.marca.errors %}<div class="pf-error-text">{{ form.marca.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.modelo.id_for_label }}" class="required">{{ form.modelo.label }}</label>
+          {{ form.modelo }}
+          {% if form.modelo.errors %}<div class="pf-error-text">{{ form.modelo.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.tipo.id_for_label }}" class="required">{{ form.tipo.label }}</label>
+          {{ form.tipo }}
+          {% if form.tipo.errors %}<div class="pf-error-text">{{ form.tipo.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.ano_fabricacao.id_for_label }}">{{ form.ano_fabricacao.label }}</label>
+          {{ form.ano_fabricacao }}
+          {% if form.ano_fabricacao.errors %}<div class="pf-error-text">{{ form.ano_fabricacao.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.ano_modelo.id_for_label }}">{{ form.ano_modelo.label }}</label>
+          {{ form.ano_modelo }}
+          {% if form.ano_modelo.errors %}<div class="pf-error-text">{{ form.ano_modelo.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.cor.id_for_label }}">{{ form.cor.label }}</label>
+          {{ form.cor }}
+          {% if form.cor.errors %}<div class="pf-error-text">{{ form.cor.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.chassi.id_for_label }}">{{ form.chassi.label }}</label>
+          {{ form.chassi }}
+          {% if form.chassi.errors %}<div class="pf-error-text">{{ form.chassi.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="pf-card-header" style="margin-top: var(--space-24);">
+      <div class="pf-card-title">
+        <i class="fas fa-sitemap"></i> Setor, Responsabilidade e Situação
+      </div>
+    </div>
+
+    <div class="pf-form-grid">
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.setor_pertencente.id_for_label }}" class="required">{{ form.setor_pertencente.label }}</label>
+          {{ form.setor_pertencente }}
+          {% if form.setor_pertencente.errors %}<div class="pf-error-text">{{ form.setor_pertencente.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.responsavel_tipo.id_for_label }}" class="required">{{ form.responsavel_tipo.label }}</label>
+          {{ form.responsavel_tipo }}
+          {% if form.responsavel_tipo.errors %}<div class="pf-error-text">{{ form.responsavel_tipo.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.status.id_for_label }}" class="required">{{ form.status.label }}</label>
+          {{ form.status }}
+          {% if form.status.errors %}<div class="pf-error-text">{{ form.status.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.responsavel_setor.id_for_label }}">{{ form.responsavel_setor.label }}</label>
+          {{ form.responsavel_setor }}
+          <small class="pf-small">Utilizado caso o responsável seja um setor específico (ex: Seção de Transporte / DREX)</small>
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.responsavel_pessoa.id_for_label }}">{{ form.responsavel_pessoa.label }}</label>
+          {{ form.responsavel_pessoa }}
+          <small class="pf-small">Utilizado caso a viatura seja acautelada a um servidor específico</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="pf-card-header" style="margin-top: var(--space-24);">
+      <div class="pf-card-title">
+        <i class="fas fa-tachometer-alt"></i> Quilometragem e Alertas de Revisão
+      </div>
+    </div>
+
+    <div class="pf-form-grid">
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.km_atual.id_for_label }}" class="required">{{ form.km_atual.label }}</label>
+          {{ form.km_atual }}
+          {% if form.km_atual.errors %}<div class="pf-error-text">{{ form.km_atual.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.proxima_manutencao_km.id_for_label }}">{{ form.proxima_manutencao_km.label }}</label>
+          {{ form.proxima_manutencao_km }}
+          <small class="pf-small">{{ form.proxima_manutencao_km.help_text }}</small>
+          {% if form.proxima_manutencao_km.errors %}<div class="pf-error-text">{{ form.proxima_manutencao_km.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.proxima_manutencao_data.id_for_label }}">{{ form.proxima_manutencao_data.label }}</label>
+          {{ form.proxima_manutencao_data }}
+          <small class="pf-small">{{ form.proxima_manutencao_data.help_text }}</small>
+          {% if form.proxima_manutencao_data.errors %}<div class="pf-error-text">{{ form.proxima_manutencao_data.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="pf-field">
+          <label for="{{ form.observacoes.id_for_label }}">{{ form.observacoes.label }}</label>
+          {{ form.observacoes }}
+        </div>
+      </div>
+
+      <div class="col-12" style="display: flex; align-items: center;">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          {{ form.ativo }}
+          <strong>Viatura Ativa na Frota Oficial</strong>
+        </label>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: var(--space-8); margin-top: var(--space-24); border-top: 1px solid var(--pf-grey-200); padding-top: var(--space-16);">
+      <a href="{% url 'veiculos:lista' %}" class="pf-btn pf-btn-ghost">Cancelar</a>
+      <button type="submit" class="pf-btn pf-btn-primary">
+        <i class="fas fa-save"></i> Salvar Viatura
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

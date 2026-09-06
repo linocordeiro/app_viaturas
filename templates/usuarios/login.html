@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acesso ao Sistema | APP_VIATURAS — Polícia Federal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'css/frontline.css' %}">
+  <style>
+    body {
+      background-color: var(--pf-black);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: var(--space-24);
+      background-image: radial-gradient(circle at 50% 30%, #1c2227 0%, #111213 80%);
+    }
+    .pf-login-container {
+      width: 100%;
+      max-width: 420px;
+      background: #FFFFFF;
+      border-radius: 8px;
+      border: 1px solid var(--pf-gold-500);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+    .pf-login-header {
+      background-color: var(--pf-black);
+      padding: var(--space-32) var(--space-24) var(--space-24);
+      text-align: center;
+      border-bottom: 3px solid var(--pf-gold-500);
+    }
+    .pf-login-logo {
+      height: 80px;
+      margin-bottom: var(--space-16);
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+    }
+    .pf-login-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .pf-login-sub {
+      font-size: 12px;
+      color: var(--pf-gold-500);
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+    .pf-login-body {
+      padding: var(--space-32) var(--space-24);
+    }
+    .pf-login-footer {
+      background-color: var(--pf-grey-100);
+      padding: var(--space-16);
+      text-align: center;
+      font-size: 11px;
+      color: var(--pf-grey-600);
+      border-top: 1px solid var(--pf-grey-200);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="pf-login-container">
+    <div class="pf-login-header">
+      <img src="{% static 'img/brasao_pf.png' %}" alt="Brasão Polícia Federal" class="pf-login-logo">
+      <h1 class="pf-login-title">POLÍCIA FEDERAL</h1>
+      <div class="pf-login-sub">APP_VIATURAS • CONTROLE DE ENTRADA E SAÍDA</div>
+    </div>
+
+    <div class="pf-login-body">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="pf-alert {% if message.tags == 'error' %}pf-alert-danger{% else %}pf-alert-info{% endif %}">
+            <i class="fas fa-info-circle"></i>
+            <div>{{ message }}</div>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" action="{% url 'usuarios:login' %}">
+        {% csrf_token %}
+        <div class="pf-field">
+          <label for="id_username"><i class="fas fa-user"></i> {{ form.username.label }}</label>
+          {{ form.username }}
+        </div>
+
+        <div class="pf-field">
+          <label for="id_password"><i class="fas fa-lock"></i> {{ form.password.label }}</label>
+          {{ form.password }}
+        </div>
+
+        <div style="margin-top: var(--space-24);">
+          <button type="submit" class="pf-btn pf-btn-primary pf-btn-lg" style="width: 100%;">
+            <i class="fas fa-sign-in-alt"></i> Acessar Sistema
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="pf-login-footer">
+      <div><strong>Acesso Restrito</strong> — Uso exclusivo de servidores e colaboradores autorizados.</div>
+      <div style="margin-top: 4px;">Padrão Visual Frontline PF • Diretoria de Tecnologia da Informação</div>
+    </div>
+  </div>
+
+</body>
+</html>

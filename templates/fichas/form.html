@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <a href="{% url 'fichas:lista' %}">Fichas de Controle</a>
+  <span>/</span>
+  <strong>{{ titulo }}</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2>{{ titulo }}</h2>
+    <p>Abertura de expediente diário para registro e fiscalização da frota de viaturas</p>
+  </div>
+  <div>
+    <a href="{% url 'fichas:lista' %}" class="pf-btn pf-btn-secondary">
+      <i class="fas fa-arrow-left"></i> Voltar à Lista
+    </a>
+  </div>
+</div>
+
+<div class="pf-card">
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="pf-card-header">
+      <div class="pf-card-title">
+        <i class="fas fa-calendar-check"></i> Parâmetros do Expediente
+      </div>
+    </div>
+
+    <div class="pf-form-grid">
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.data_expediente.id_for_label }}" class="required">{{ form.data_expediente.label }}</label>
+          {{ form.data_expediente }}
+          <small class="pf-small">{{ form.data_expediente.help_text }}</small>
+          {% if form.data_expediente.errors %}<div class="pf-error-text">{{ form.data_expediente.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.horario_inicio.id_for_label }}" class="required">{{ form.horario_inicio.label }}</label>
+          {{ form.horario_inicio }}
+          {% if form.horario_inicio.errors %}<div class="pf-error-text">{{ form.horario_inicio.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.horario_termino.id_for_label }}" class="required">{{ form.horario_termino.label }}</label>
+          {{ form.horario_termino }}
+          {% if form.horario_termino.errors %}<div class="pf-error-text">{{ form.horario_termino.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.nome_vigilante.id_for_label }}" class="required">{{ form.nome_vigilante.label }}</label>
+          {{ form.nome_vigilante }}
+          <small class="pf-small">{{ form.nome_vigilante.help_text }}</small>
+          {% if form.nome_vigilante.errors %}<div class="pf-error-text">{{ form.nome_vigilante.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.observacoes.id_for_label }}">{{ form.observacoes.label }}</label>
+          {{ form.observacoes }}
+          {% if form.observacoes.errors %}<div class="pf-error-text">{{ form.observacoes.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: var(--space-8); margin-top: var(--space-24); border-top: 1px solid var(--pf-grey-200); padding-top: var(--space-16);">
+      <a href="{% url 'fichas:lista' %}" class="pf-btn pf-btn-ghost">Cancelar</a>
+      <button type="submit" class="pf-btn pf-btn-primary">
+        <i class="fas fa-check"></i> Confirmar e Abrir Ficha
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

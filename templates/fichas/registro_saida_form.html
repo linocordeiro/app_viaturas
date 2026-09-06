@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if is_edit %}Editar Saída{% else %}Lançar Saída de Viatura{% endif %}{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <a href="{% url 'fichas:lista' %}">Fichas de Controle</a>
+  <span>/</span>
+  <a href="{% url 'fichas:detalhe' ficha.pk %}">{{ ficha.data_expediente|date:"d/m/Y" }}</a>
+  <span>/</span>
+  <strong>{% if is_edit %}Editar Saída{% else %}Lançar Saída{% endif %}</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2>{% if is_edit %}Editar Registro de Saída{% else %}Lançar Saída de Viatura{% endif %}</h2>
+    <p>Ficha do Expediente: <strong>{{ ficha.data_expediente|date:"d/m/Y" }}</strong> • Vigilante Responsável: {{ ficha.nome_vigilante }}</p>
+  </div>
+  <div>
+    <a href="{% url 'fichas:detalhe' ficha.pk %}" class="pf-btn pf-btn-secondary">
+      <i class="fas fa-arrow-left"></i> Voltar à Ficha
+    </a>
+  </div>
+</div>
+
+<div class="pf-card">
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="pf-card-header">
+      <div class="pf-card-title">
+        <i class="fas fa-key"></i> Dados de Saída do Veículo
+      </div>
+    </div>
+
+    <div class="pf-form-grid">
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.viatura.id_for_label }}" class="required">{{ form.viatura.label }}</label>
+          {{ form.viatura }}
+          <small class="pf-small">Apenas viaturas disponíveis no pátio são listadas.</small>
+          {% if form.viatura.errors %}<div class="pf-error-text">{{ form.viatura.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.condutor.id_for_label }}" class="required">{{ form.condutor.label }}</label>
+          {{ form.condutor }}
+          <small class="pf-small">Informe o nome completo e matrícula do servidor condutor.</small>
+          {% if form.condutor.errors %}<div class="pf-error-text">{{ form.condutor.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.destino.id_for_label }}" class="required">{{ form.destino.label }}</label>
+          {{ form.destino }}
+          {% if form.destino.errors %}<div class="pf-error-text">{{ form.destino.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.horario_saida.id_for_label }}" class="required">{{ form.horario_saida.label }}</label>
+          {{ form.horario_saida }}
+          {% if form.horario_saida.errors %}<div class="pf-error-text">{{ form.horario_saida.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.odometro_saida.id_for_label }}" class="required">{{ form.odometro_saida.label }}</label>
+          {{ form.odometro_saida }}
+          {% if form.odometro_saida.errors %}<div class="pf-error-text">{{ form.odometro_saida.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: var(--space-8); margin-top: var(--space-24); border-top: 1px solid var(--pf-grey-200); padding-top: var(--space-16);">
+      <a href="{% url 'fichas:detalhe' ficha.pk %}" class="pf-btn pf-btn-ghost">Cancelar</a>
+      <button type="submit" class="pf-btn pf-btn-primary">
+        <i class="fas fa-check"></i> Confirmar Saída
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

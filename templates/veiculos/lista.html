@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Frota de Viaturas{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <span>Gestão de Frota</span>
+  <span>/</span>
+  <strong>Viaturas</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2>Frota de Viaturas Oficiais</h2>
+    <p>Monitoramento de disponibilidade, quilometragem, lotação e manutenção</p>
+  </div>
+  <div style="display: flex; gap: var(--space-8);">
+    <a href="{% url 'veiculos:exportar_pdf' %}" class="pf-btn pf-btn-secondary" title="Exportar Lista em PDF">
+      <i class="fas fa-file-pdf" style="color: var(--pf-red-500);"></i> Relatório PDF
+    </a>
+    <a href="{% url 'veiculos:exportar_excel' %}" class="pf-btn pf-btn-secondary" title="Exportar Lista em Excel">
+      <i class="fas fa-file-excel" style="color: var(--pf-green-500);"></i> Planilha Excel
+    </a>
+    <a href="{% url 'veiculos:criar' %}" class="pf-btn pf-btn-primary">
+      <i class="fas fa-plus"></i> Nova Viatura
+    </a>
+  </div>
+</div>
+
+<!-- KPI Cards de Frota -->
+<div class="pf-kpi-grid">
+  <div class="pf-kpi-card">
+    <div class="pf-kpi-info">
+      <span class="pf-kpi-title">TOTAL DA FROTA</span>
+      <span class="pf-kpi-value">{{ total_viaturas }}</span>
+    </div>
+    <i class="fas fa-car pf-kpi-icon"></i>
+  </div>
+
+  <div class="pf-kpi-card kpi-success">
+    <div class="pf-kpi-info">
+      <span class="pf-kpi-title">DISPONÍVEIS NO PÁTIO</span>
+      <span class="pf-kpi-value" style="color: var(--pf-green-500);">{{ total_disponiveis }}</span>
+    </div>
+    <i class="fas fa-check-circle pf-kpi-icon" style="color: var(--pf-green-500);"></i>
+  </div>
+
+  <div class="pf-kpi-card kpi-gold">
+    <div class="pf-kpi-info">
+      <span class="pf-kpi-title">EM OPERAÇÃO / SAÍDA</span>
+      <span class="pf-kpi-value" style="color: var(--pf-gold-600);">{{ total_em_uso }}</span>
+    </div>
+    <i class="fas fa-road pf-kpi-icon" style="color: var(--pf-gold-500);"></i>
+  </div>
+
+  <div class="pf-kpi-card kpi-danger">
+    <div class="pf-kpi-info">
+      <span class="pf-kpi-title">EM MANUTENÇÃO / OFICINA</span>
+      <span class="pf-kpi-value" style="color: var(--pf-red-500);">{{ total_manutencao }}</span>
+    </div>
+    <i class="fas fa-wrench pf-kpi-icon" style="color: var(--pf-red-500);"></i>
+  </div>
+</div>
+
+<!-- Filtros e Tabela de Viaturas -->
+<div class="pf-card">
+  <form method="get" class="pf-form-grid" style="margin-bottom: var(--space-16); align-items: flex-end;">
+    <div class="col-4">
+      <div class="pf-field" style="margin-bottom: 0;">
+        <label for="q">Buscar por Placa, Modelo ou Marca</label>
+        <input type="text" id="q" name="q" value="{{ termo }}" class="pf-input" placeholder="Ex: BRA2E19, Hilux...">
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="pf-field" style="margin-bottom: 0;">
+        <label for="status">Estado / Status</label>
+        <select id="status" name="status" class="pf-select">
+          <option value="">Todos os Estados</option>
+          <option value="DISPONIVEL" {% if status_filtro == 'DISPONIVEL' %}selected{% endif %}>Disponível</option>
+          <option value="EM_USO" {% if status_filtro == 'EM_USO' %}selected{% endif %}>Em Uso / Em Trânsito</option>
+          <option value="MANUTENCAO" {% if status_filtro == 'MANUTENCAO' %}selected{% endif %}>Em Manutenção</option>
+          <option value="INDISPONIVEL" {% if status_filtro == 'INDISPONIVEL' %}selected{% endif %}>Indisponível</option>
+        </select>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="pf-field" style="margin-bottom: 0;">
+        <label for="setor">Unidade / Setor</label>
+        <select id="setor" name="setor" class="pf-select">
+          <option value="">Todos os Setores</option>
+          {% for s in setores %}
+            <option value="{{ s.id }}" {% if setor_filtro == s.id|stringformat:"i" %}selected{% endif %}>{{ s.sigla }} - {{ s.nome }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="col-2" style="display: flex; gap: var(--space-8);">
+      <button type="submit" class="pf-btn pf-btn-secondary" style="flex: 1;">
+        <i class="fas fa-filter"></i> Filtrar
+      </button>
+      {% if termo or status_filtro or setor_filtro %}
+        <a href="{% url 'veiculos:lista' %}" class="pf-btn pf-btn-ghost" title="Limpar Filtros">Limpar</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <div class="pf-table-wrapper">
+    <table class="pf-table">
+      <thead>
+        <tr>
+          <th>Viatura / Modelo</th>
+          <th>Placa</th>
+          <th>Tipo</th>
+          <th>Setor Pertencente</th>
+          <th>Responsável</th>
+          <th>Odômetro</th>
+          <th>Alerta de Manutenção</th>
+          <th>Status</th>
+          <th style="text-align: right;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in viaturas_alertas %}
+          <tr>
+            <td>
+              <a href="{% url 'veiculos:detalhe' item.viatura.pk %}" style="color: var(--pf-blue-500); font-weight: 700; text-decoration: none;">
+                {{ item.viatura.marca }} {{ item.viatura.modelo }}
+              </a>
+              <div class="pf-small">{{ item.viatura.ano_fabricacao }}/{{ item.viatura.ano_modelo }} • {{ item.viatura.cor }}</div>
+            </td>
+            <td>
+              <span class="pf-badge pf-badge-dark" style="font-family: monospace; font-size: 13px;">
+                {{ item.viatura.placa }}
+              </span>
+            </td>
+            <td>{{ item.viatura.get_tipo_display }}</td>
+            <td>
+              <strong>{{ item.viatura.setor_pertencente.sigla }}</strong>
+            </td>
+            <td>{{ item.viatura.identificacao_responsavel }}</td>
+            <td><strong>{{ item.viatura.km_atual|stringformat:"d" }} km</strong></td>
+            <td>
+              {% if item.alerta.status == 'vencida' %}
+                <span class="pf-badge pf-badge-danger" title="{{ item.alerta.mensagens.0 }}">
+                  <i class="fas fa-exclamation-triangle"></i> Revisão Vencida
+                </span>
+              {% elif item.alerta.status == 'proxima' %}
+                <span class="pf-badge pf-badge-warning" title="{{ item.alerta.mensagens.0 }}">
+                  <i class="fas fa-clock"></i> Revisão Próxima
+                </span>
+              {% else %}
+                <span class="pf-badge pf-badge-success">
+                  <i class="fas fa-check"></i> Em Dia
+                </span>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.viatura.status == 'DISPONIVEL' %}
+                <span class="pf-badge pf-badge-success"><i class="fas fa-check-circle"></i> Disponível</span>
+              {% elif item.viatura.status == 'EM_USO' %}
+                <span class="pf-badge pf-badge-info"><i class="fas fa-road"></i> Em Trânsito</span>
+              {% elif item.viatura.status == 'MANUTENCAO' %}
+                <span class="pf-badge pf-badge-warning"><i class="fas fa-wrench"></i> Na Oficina</span>
+              {% else %}
+                <span class="pf-badge pf-badge-danger"><i class="fas fa-ban"></i> Indisponível</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+              <a href="{% url 'veiculos:detalhe' item.viatura.pk %}" class="pf-btn pf-btn-sm pf-btn-secondary" title="Ver Histórico Completo">
+                <i class="fas fa-eye"></i> Detalhes
+              </a>
+              <a href="{% url 'veiculos:editar' item.viatura.pk %}" class="pf-btn pf-btn-sm pf-btn-ghost" title="Editar Veículo">
+                <i class="fas fa-edit"></i>
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="9" style="text-align: center; padding: var(--space-32);">
+              <i class="fas fa-car" style="font-size: 32px; color: var(--pf-grey-400); margin-bottom: 8px;"></i>
+              <p>Nenhuma viatura cadastrada ou encontrada com os filtros informados.</p>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

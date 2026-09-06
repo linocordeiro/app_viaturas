@@ -1,0 +1,73 @@
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+fix = true
+show-fixes = true
+indent-width = 4
+exclude = [
+    "venv",
+    ".venv",
+    "env",
+    ".env",
+    "node_modules",
+    "__pycache__",
+    "staticfiles",
+]
+
+[tool.ruff.lint]
+select = [
+    "ASYNC",
+    "A",
+    "B",
+    "BLE",
+    "C4",
+    "C90",
+    "COM",
+    "E",
+    "EM",
+    "ERA",
+    "EXE",
+    "F",
+    "FBT",
+    "FIX",
+    "I",
+    "ICN",
+    "ISC",
+    "Q",
+    "RET",
+    "RSE",
+    "S",
+    "SIM",
+    "SLF",
+    "T10",
+    "T20",
+    "TC",
+    "TD",
+    "TRY",
+    "UP",
+    "W",
+    "YTT",
+    "RUF",
+    "N",
+]
+ignore = [
+    "T201",    # Permite o uso de print()
+    "COM812",  # Evita conflito de virgula final com o formatador
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignora regras especificas em testes
+"tests/**/*.py" = ["ANN201", "S101"]
+"app/tests.py" = ["ANN201", "S101"]
+
+# Ignora verificacoes em arquivos de migracao gerados pelo Django
+"**/migrations/*" = ["E501", "RUF012"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.ruff.lint.isort]
+# Define os pacotes locais do projeto Cosmic
+known-first-party = ["app", "utils"]

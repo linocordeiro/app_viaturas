@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Fichas de Controle Diário{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <span>Operação Diária</span>
+  <span>/</span>
+  <strong>Fichas de Controle</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2>Fichas Diárias de Controle de Viaturas</h2>
+    <p>Histórico cronológico de expedientes, registros de plantão e fiscalização de saídas</p>
+  </div>
+  <div style="display: flex; gap: var(--space-8);">
+    <a href="{% url 'fichas:hoje' %}" class="pf-btn pf-btn-gold">
+      <i class="fas fa-calendar-check"></i> Ficha de Hoje ({% now "d/m/Y" %})
+    </a>
+    <a href="{% url 'fichas:criar' %}" class="pf-btn pf-btn-primary">
+      <i class="fas fa-plus"></i> Abrir Outra Ficha
+    </a>
+  </div>
+</div>
+
+<div class="pf-card">
+  <form method="get" class="pf-form-grid" style="margin-bottom: var(--space-16); align-items: flex-end;">
+    <div class="col-4">
+      <div class="pf-field" style="margin-bottom: 0;">
+        <label for="data">Data do Expediente</label>
+        <input type="date" id="data" name="data" value="{{ data_filtro }}" class="pf-input">
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="pf-field" style="margin-bottom: 0;">
+        <label for="status">Status da Ficha</label>
+        <select id="status" name="status" class="pf-select">
+          <option value="">Todas as Situações</option>
+          <option value="ABERTA" {% if status_filtro == 'ABERTA' %}selected{% endif %}>Aberta (Em Andamento)</option>
+          <option value="ENCERRADA" {% if status_filtro == 'ENCERRADA' %}selected{% endif %}>Encerrada (Concluída)</option>
+        </select>
+      </div>
+    </div>
+    <div class="col-4" style="display: flex; gap: var(--space-8);">
+      <button type="submit" class="pf-btn pf-btn-secondary" style="flex: 1;">
+        <i class="fas fa-filter"></i> Filtrar
+      </button>
+      {% if data_filtro or status_filtro %}
+        <a href="{% url 'fichas:lista' %}" class="pf-btn pf-btn-ghost">Limpar</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <div class="pf-table-wrapper">
+    <table class="pf-table">
+      <thead>
+        <tr>
+          <th>Data do Expediente</th>
+          <th>Horário (Início - Término)</th>
+          <th>Vigilante / Responsável</th>
+          <th>Movimentações</th>
+          <th>Visto Responsável</th>
+          <th>Visto Chefia</th>
+          <th>Status</th>
+          <th style="text-align: right;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in fichas %}
+          <tr>
+            <td>
+              <a href="{% url 'fichas:detalhe' f.pk %}" style="color: var(--pf-blue-500); font-weight: 700; text-decoration: none; font-size: 14px;">
+                <i class="fas fa-calendar-day"></i> {{ f.data_expediente|date:"d/m/Y" }}
+              </a>
+              {% if f.data_expediente == hoje %}
+                <span class="pf-badge pf-badge-info" style="margin-left: 4px;">HOJE</span>
+              {% endif %}
+            </td>
+            <td>{{ f.horario_inicio|time:"H:i" }} às {{ f.horario_termino|time:"H:i" }}</td>
+            <td><strong>{{ f.nome_vigilante }}</strong></td>
+            <td>
+              <span class="pf-badge pf-badge-dark">
+                {{ f.registros.count }} saída(s)
+              </span>
+            </td>
+            <td>
+              {% if f.visto_responsavel %}
+                <span class="pf-badge pf-badge-success" title="Assinado por {{ f.responsavel_visto_usuario.get_full_name|default:f.responsavel_visto_usuario.username }}">
+                  <i class="fas fa-check"></i> Assinado
+                </span>
+              {% else %}
+                <span class="pf-badge pf-badge-warning">Pendente</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if f.visto_chefia %}
+                <span class="pf-badge pf-badge-success" title="Assinado por {{ f.chefia_visto_usuario.get_full_name|default:f.chefia_visto_usuario.username }}">
+                  <i class="fas fa-check"></i> Assinado
+                </span>
+              {% else %}
+                <span class="pf-badge pf-badge-warning">Pendente</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if f.status == 'ABERTA' %}
+                <span class="pf-badge pf-badge-info"><i class="fas fa-edit"></i> Aberta</span>
+              {% else %}
+                <span class="pf-badge pf-badge-dark"><i class="fas fa-lock"></i> Encerrada</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+              <a href="{% url 'fichas:detalhe' f.pk %}" class="pf-btn pf-btn-sm pf-btn-secondary" title="Abrir Ficha">
+                <i class="fas fa-folder-open"></i> Acessar
+              </a>
+              <a href="{% url 'fichas:exportar_pdf' f.pk %}" class="pf-btn pf-btn-sm pf-btn-ghost" title="Exportar PDF Oficial">
+                <i class="fas fa-file-pdf" style="color: var(--pf-red-500);"></i>
+              </a>
+              <a href="{% url 'fichas:exportar_excel' f.pk %}" class="pf-btn pf-btn-sm pf-btn-ghost" title="Exportar Planilha Excel">
+                <i class="fas fa-file-excel" style="color: var(--pf-green-500);"></i>
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: var(--space-32);">
+              <i class="fas fa-clipboard" style="font-size: 32px; color: var(--pf-grey-400); margin-bottom: 8px;"></i>
+              <p>Nenhuma ficha de controle encontrada com os filtros informados.</p>
+              <div style="margin-top: var(--space-16);">
+                <a href="{% url 'fichas:hoje' %}" class="pf-btn pf-btn-primary">
+                  <i class="fas fa-plus"></i> Abrir Ficha de Hoje
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

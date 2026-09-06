@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Usuários e Acessos{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <span>Administração</span>
+  <span>/</span>
+  <strong>Usuários e Acessos</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2>Gestão de Usuários do Sistema</h2>
+    <p>Controle de operadores, vigilantes, encarregados de frota e chefias</p>
+  </div>
+  <div>
+    <a href="{% url 'usuarios:criar' %}" class="pf-btn pf-btn-primary">
+      <i class="fas fa-user-plus"></i> Novo Usuário
+    </a>
+  </div>
+</div>
+
+<div class="pf-card">
+  <form method="get" class="pf-form-grid" style="margin-bottom: var(--space-16); align-items: flex-end;">
+    <div class="col-8">
+      <div class="pf-field" style="margin-bottom: 0;">
+        <label for="q">Buscar por Nome, Matrícula, Usuário ou Setor</label>
+        <input type="text" id="q" name="q" value="{{ termo }}" class="pf-input" placeholder="Digite para pesquisar...">
+      </div>
+    </div>
+    <div class="col-4" style="display: flex; gap: var(--space-8);">
+      <button type="submit" class="pf-btn pf-btn-secondary" style="flex: 1;">
+        <i class="fas fa-search"></i> Pesquisar
+      </button>
+      {% if termo %}
+        <a href="{% url 'usuarios:lista' %}" class="pf-btn pf-btn-ghost">Limpar</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <div class="pf-table-wrapper">
+    <table class="pf-table">
+      <thead>
+        <tr>
+          <th>Nome Completo</th>
+          <th>Usuário</th>
+          <th>Matrícula</th>
+          <th>Cargo / Função</th>
+          <th>Setor</th>
+          <th>Perfil de Acesso</th>
+          <th>Status</th>
+          <th style="text-align: right;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in usuarios %}
+          <tr>
+            <td><strong>{{ u.get_full_name|default:"-" }}</strong></td>
+            <td><code>{{ u.username }}</code></td>
+            <td>{{ u.matricula|default:"-" }}</td>
+            <td>{{ u.cargo|default:"-" }}</td>
+            <td>{{ u.setor|default:"-" }}</td>
+            <td>
+              {% if u.perfil == 'ADMINISTRADOR' %}
+                <span class="pf-badge pf-badge-dark"><i class="fas fa-shield-alt"></i> {{ u.get_perfil_display }}</span>
+              {% elif u.perfil == 'CHEFIA' %}
+                <span class="pf-badge pf-badge-warning"><i class="fas fa-star"></i> {{ u.get_perfil_display }}</span>
+              {% elif u.perfil == 'RESPONSAVEL_VIATURAS' %}
+                <span class="pf-badge pf-badge-info"><i class="fas fa-key"></i> {{ u.get_perfil_display }}</span>
+              {% else %}
+                <span class="pf-badge pf-badge-success"><i class="fas fa-user-check"></i> {{ u.get_perfil_display }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if u.is_active %}
+                <span class="pf-badge pf-badge-success">Ativo</span>
+              {% else %}
+                <span class="pf-badge pf-badge-danger">Inativo</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+              <a href="{% url 'usuarios:editar' u.pk %}" class="pf-btn pf-btn-sm pf-btn-secondary" title="Editar Usuário">
+                <i class="fas fa-edit"></i> Editar
+              </a>
+              {% if u != request.user %}
+                <a href="{% url 'usuarios:toggle_ativo' u.pk %}" class="pf-btn pf-btn-sm {% if u.is_active %}pf-btn-ghost{% else %}pf-btn-outline{% endif %}" title="Alterar status de acesso">
+                  {% if u.is_active %}
+                    <i class="fas fa-user-slash"></i> Desativar
+                  {% else %}
+                    <i class="fas fa-user-check"></i> Ativar
+                  {% endif %}
+                </a>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: var(--space-32);">
+              <i class="fas fa-users" style="font-size: 32px; color: var(--pf-grey-400); margin-bottom: 8px;"></i>
+              <p>Nenhum usuário encontrado com os filtros informados.</p>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

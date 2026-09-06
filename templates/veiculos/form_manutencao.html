@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Manutenção — {{ viatura.placa }}{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <a href="{% url 'veiculos:lista' %}">Viaturas</a>
+  <span>/</span>
+  <a href="{% url 'veiculos:detalhe' viatura.pk %}">{{ viatura.placa }}</a>
+  <span>/</span>
+  <strong>Registrar Manutenção</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2>Registrar Manutenção / Revisão Mecânica</h2>
+    <p>Viatura: <strong>{{ viatura.marca }} {{ viatura.modelo }} (Placa {{ viatura.placa }})</strong> • Odômetro Atual: {{ viatura.km_atual }} km</p>
+  </div>
+  <div>
+    <a href="{% url 'veiculos:detalhe' viatura.pk %}" class="pf-btn pf-btn-secondary">
+      <i class="fas fa-arrow-left"></i> Voltar à Viatura
+    </a>
+  </div>
+</div>
+
+<div class="pf-card">
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="pf-card-header">
+      <div class="pf-card-title">
+        <i class="fas fa-tools"></i> Dados da Ordem de Serviço
+      </div>
+    </div>
+
+    <div class="pf-form-grid">
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.tipo.id_for_label }}" class="required">{{ form.tipo.label }}</label>
+          {{ form.tipo }}
+          {% if form.tipo.errors %}<div class="pf-error-text">{{ form.tipo.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.data_manutencao.id_for_label }}" class="required">{{ form.data_manutencao.label }}</label>
+          {{ form.data_manutencao }}
+          {% if form.data_manutencao.errors %}<div class="pf-error-text">{{ form.data_manutencao.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.km_no_momento.id_for_label }}" class="required">{{ form.km_no_momento.label }}</label>
+          {{ form.km_no_momento }}
+          {% if form.km_no_momento.errors %}<div class="pf-error-text">{{ form.km_no_momento.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.fornecedor_oficina.id_for_label }}" class="required">{{ form.fornecedor_oficina.label }}</label>
+          {{ form.fornecedor_oficina }}
+          {% if form.fornecedor_oficina.errors %}<div class="pf-error-text">{{ form.fornecedor_oficina.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.numero_ordem_servico.id_for_label }}">{{ form.numero_ordem_servico.label }}</label>
+          {{ form.numero_ordem_servico }}
+          {% if form.numero_ordem_servico.errors %}<div class="pf-error-text">{{ form.numero_ordem_servico.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.valor_total.id_for_label }}" class="required">{{ form.valor_total.label }}</label>
+          {{ form.valor_total }}
+          {% if form.valor_total.errors %}<div class="pf-error-text">{{ form.valor_total.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="pf-field">
+          <label for="{{ form.descricao_servico.id_for_label }}" class="required">{{ form.descricao_servico.label }}</label>
+          {{ form.descricao_servico }}
+          {% if form.descricao_servico.errors %}<div class="pf-error-text">{{ form.descricao_servico.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="pf-field">
+          <label for="{{ form.pecas_substituidas.id_for_label }}">{{ form.pecas_substituidas.label }}</label>
+          {{ form.pecas_substituidas }}
+          {% if form.pecas_substituidas.errors %}<div class="pf-error-text">{{ form.pecas_substituidas.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="pf-card-header" style="margin-top: var(--space-24);">
+      <div class="pf-card-title">
+        <i class="fas fa-calendar-plus"></i> Agendamento da Próxima Revisão
+      </div>
+    </div>
+
+    <div class="pf-form-grid">
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.proxima_revisao_km.id_for_label }}">{{ form.proxima_revisao_km.label }}</label>
+          {{ form.proxima_revisao_km }}
+          <small class="pf-small">Ao preencher, atualiza automaticamente o alerta de quilometragem da viatura.</small>
+          {% if form.proxima_revisao_km.errors %}<div class="pf-error-text">{{ form.proxima_revisao_km.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.proxima_revisao_data.id_for_label }}">{{ form.proxima_revisao_data.label }}</label>
+          {{ form.proxima_revisao_data }}
+          <small class="pf-small">Ao preencher, atualiza automaticamente o alerta de data da viatura.</small>
+          {% if form.proxima_revisao_data.errors %}<div class="pf-error-text">{{ form.proxima_revisao_data.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: var(--space-8); margin-top: var(--space-24); border-top: 1px solid var(--pf-grey-200); padding-top: var(--space-16);">
+      <a href="{% url 'veiculos:detalhe' viatura.pk %}" class="pf-btn pf-btn-ghost">Cancelar</a>
+      <button type="submit" class="pf-btn pf-btn-primary">
+        <i class="fas fa-save"></i> Gravar Manutenção
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

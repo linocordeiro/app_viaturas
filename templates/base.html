@@ -1,0 +1,155 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}APP_VIATURAS{% endblock %} | Polícia Federal</title>
+
+  <!-- Google Fonts: Roboto -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 5 Free -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+  <!-- Frontline PF Stylesheet -->
+  <link rel="stylesheet" href="{% static 'css/frontline.css' %}">
+
+  <!-- Chart.js para Dashboard -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- 1. Header Frontline PF -->
+  <header class="pf-header">
+    <a href="{% url 'dashboard:home' %}" class="pf-header-brand">
+      <img src="{% static 'img/brasao_pf.png' %}" alt="Brasão Polícia Federal" class="pf-header-logo">
+      <div class="pf-header-titles">
+        <span class="pf-header-title">POLÍCIA FEDERAL</span>
+        <span class="pf-header-subtitle">APP_VIATURAS • CONTROLE DE ENTRADA E SAÍDA</span>
+      </div>
+    </a>
+
+    <div class="pf-header-actions">
+      {% if user.is_authenticated %}
+        <div class="pf-user-profile">
+          <div class="pf-user-avatar">
+            {{ user.first_name|default:user.username|slice:":1"|upper }}
+          </div>
+          <div class="pf-user-info">
+            <span class="pf-user-name">{{ user.get_full_name|default:user.username }}</span>
+            <span class="pf-user-role">{{ user.get_perfil_display }}</span>
+          </div>
+        </div>
+        <form action="{% url 'usuarios:logout' %}" method="post" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="pf-btn pf-btn-sm pf-btn-ghost" style="color:#FFF;" title="Sair do sistema">
+            <i class="fas fa-sign-out-alt"></i> Sair
+          </button>
+        </form>
+      {% else %}
+        <a href="{% url 'usuarios:login' %}" class="pf-btn pf-btn-sm pf-btn-gold">
+          <i class="fas fa-sign-in-alt"></i> Entrar
+        </a>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- 2. SubHeader Frontline PF -->
+  <div class="pf-subheader">
+    <div class="pf-breadcrumb">
+      <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i> Início</a>
+      {% block breadcrumb %}{% endblock %}
+    </div>
+    <div class="pf-subheader-indicators">
+      <span class="pf-badge pf-badge-dark">
+        <i class="fas fa-shield-alt"></i> Setor: {{ user.setor|default:"Superintendência Regional" }}
+      </span>
+      <span class="pf-badge pf-badge-info">
+        <i class="fas fa-calendar-day"></i> {% now "d/m/Y" %}
+      </span>
+    </div>
+  </div>
+
+  <!-- 3. Sidebar Principal Frontline PF -->
+  <aside class="pf-sidebar">
+    <ul class="pf-menu-nav">
+      <li class="pf-menu-section-title">PRINCIPAL</li>
+      <li class="pf-menu-item">
+        <a href="{% url 'dashboard:home' %}" class="pf-menu-link {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+          <i class="fas fa-chart-line"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+
+      <li class="pf-menu-section-title">OPERAÇÃO DIÁRIA</li>
+      <li class="pf-menu-item">
+        <a href="{% url 'fichas:lista' %}" class="pf-menu-link {% if request.resolver_match.app_name == 'fichas' %}active{% endif %}">
+          <i class="fas fa-clipboard-list"></i>
+          <span>Fichas de Controle</span>
+        </a>
+      </li>
+
+      <li class="pf-menu-section-title">GESTÃO DE FROTA</li>
+      <li class="pf-menu-item">
+        <a href="{% url 'veiculos:lista' %}" class="pf-menu-link {% if request.resolver_match.app_name == 'veiculos' and not 'manutencao' in request.path %}active{% endif %}">
+          <i class="fas fa-car-side"></i>
+          <span>Viaturas</span>
+        </a>
+      </li>
+      <li class="pf-menu-item">
+        <a href="{% url 'veiculos:lista_manutencoes' %}" class="pf-menu-link {% if 'manutencao' in request.path %}active{% endif %}">
+          <i class="fas fa-tools"></i>
+          <span>Manutenções & Revisões</span>
+        </a>
+      </li>
+
+      <li class="pf-menu-section-title">ADMINISTRAÇÃO</li>
+      <li class="pf-menu-item">
+        <a href="{% url 'usuarios:lista' %}" class="pf-menu-link {% if request.resolver_match.app_name == 'usuarios' %}active{% endif %}">
+          <i class="fas fa-users-cog"></i>
+          <span>Usuários e Acessos</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- 4. Conteúdo Principal -->
+  <main class="pf-main-wrapper">
+    {% if messages %}
+      <div class="pf-messages-container">
+        {% for message in messages %}
+          <div class="pf-alert {% if message.tags == 'error' %}pf-alert-danger{% elif message.tags == 'warning' %}pf-alert-warning{% elif message.tags == 'success' %}pf-alert-success{% else %}pf-alert-info{% endif %}">
+            <i class="{% if message.tags == 'error' %}fas fa-times-circle{% elif message.tags == 'warning' %}fas fa-exclamation-triangle{% elif message.tags == 'success' %}fas fa-check-circle{% else %}fas fa-info-circle{% endif %}"></i>
+            <div>{{ message }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- 5. Footer Fixo Institucional -->
+  <footer class="pf-footer">
+    <div>
+      <strong>Polícia Federal</strong> — Diretoria de Tecnologia da Informação e Inovação (DTI)
+    </div>
+    <div class="pf-footer-links">
+      <span>Versão 1.0.0</span>
+      <span>•</span>
+      <a href="https://sistemas.pf.gov.br/frontline/" target="_blank"><i class="fas fa-external-link-alt"></i> Padrão Frontline PF</a>
+      <span>•</span>
+      <a href="mailto:suporte.ti@pf.gov.br"><i class="fas fa-headset"></i> Suporte Técnico</a>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="{% static 'js/frontline.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

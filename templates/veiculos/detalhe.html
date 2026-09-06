@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+
+{% block title %}Viatura {{ viatura.placa }}{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <a href="{% url 'veiculos:lista' %}">Viaturas</a>
+  <span>/</span>
+  <strong>{{ viatura.placa }} ({{ viatura.modelo }})</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2>{{ viatura.marca }} {{ viatura.modelo }} — <span style="font-family: monospace;">{{ viatura.placa }}</span></h2>
+    <p>{{ viatura.get_tipo_display }} • Lotação: <strong>{{ viatura.setor_pertencente.sigla }}</strong> ({{ viatura.setor_pertencente.nome }})</p>
+  </div>
+  <div style="display: flex; gap: var(--space-8); flex-wrap: wrap;">
+    <a href="{% url 'veiculos:exportar_manutencoes_pdf' viatura.pk %}" class="pf-btn pf-btn-secondary" title="Baixar Histórico em PDF">
+      <i class="fas fa-file-pdf" style="color: var(--pf-red-500);"></i> PDF Manutenção
+    </a>
+    <a href="{% url 'veiculos:exportar_manutencoes_excel' viatura.pk %}" class="pf-btn pf-btn-secondary" title="Baixar Histórico em Excel">
+      <i class="fas fa-file-excel" style="color: var(--pf-green-500);"></i> Excel Manutenção
+    </a>
+    <a href="{% url 'veiculos:manutencao_criar' viatura.pk %}" class="pf-btn pf-btn-gold">
+      <i class="fas fa-tools"></i> Registrar Manutenção
+    </a>
+    <a href="{% url 'veiculos:editar' viatura.pk %}" class="pf-btn pf-btn-primary">
+      <i class="fas fa-edit"></i> Editar Viatura
+    </a>
+  </div>
+</div>
+
+<!-- Alerta de Manutenção Ativo -->
+{% if alerta.status == 'vencida' %}
+  <div class="pf-alert pf-alert-danger">
+    <i class="{{ alerta.icone }}" style="font-size: 20px;"></i>
+    <div>
+      <strong>ATENÇÃO OPERACIONAL — REVISÃO MECÂNICA VENCIDA</strong>
+      <ul style="margin-left: 20px; margin-top: 4px;">
+        {% for m in alerta.mensagens %}
+          <li>{{ m }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+{% elif alerta.status == 'proxima' %}
+  <div class="pf-alert pf-alert-warning">
+    <i class="{{ alerta.icone }}" style="font-size: 20px;"></i>
+    <div>
+      <strong>ALERTA DE REVISÃO PREVENTIVA PRÓXIMA</strong>
+      <ul style="margin-left: 20px; margin-top: 4px;">
+        {% for m in alerta.mensagens %}
+          <li>{{ m }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+{% endif %}
+
+<div class="pf-form-grid" style="margin-bottom: var(--space-24);">
+  <!-- Ficha Técnica -->
+  <div class="col-8">
+    <div class="pf-card" style="height: 100%;">
+      <div class="pf-card-header">
+        <div class="pf-card-title">
+          <i class="fas fa-info-circle"></i> Ficha Técnica e Identificação
+        </div>
+        <div>
+          {% if viatura.status == 'DISPONIVEL' %}
+            <span class="pf-badge pf-badge-success"><i class="fas fa-check-circle"></i> Disponível no Pátio</span>
+          {% elif viatura.status == 'EM_USO' %}
+            <span class="pf-badge pf-badge-info"><i class="fas fa-road"></i> Em Uso / Em Trânsito</span>
+          {% elif viatura.status == 'MANUTENCAO' %}
+            <span class="pf-badge pf-badge-warning"><i class="fas fa-wrench"></i> Na Oficina</span>
+          {% else %}
+            <span class="pf-badge pf-badge-danger"><i class="fas fa-ban"></i> Indisponível</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="pf-form-grid">
+        <div class="col-4">
+          <small class="pf-small">Marca / Fabricante</small>
+          <div style="font-size: 15px; font-weight: 700;">{{ viatura.marca }}</div>
+        </div>
+        <div class="col-4">
+          <small class="pf-small">Modelo</small>
+          <div style="font-size: 15px; font-weight: 700;">{{ viatura.modelo }}</div>
+        </div>
+        <div class="col-4">
+          <small class="pf-small">Ano Fab. / Modelo</small>
+          <div style="font-size: 15px; font-weight: 700;">{{ viatura.ano_fabricacao }} / {{ viatura.ano_modelo }}</div>
+        </div>
+
+        <div class="col-4">
+          <small class="pf-small">Cor Predominante</small>
+          <div style="font-size: 15px; font-weight: 700;">{{ viatura.cor }}</div>
+        </div>
+        <div class="col-4">
+          <small class="pf-small">Número do Chassi</small>
+          <div style="font-size: 13px; font-family: monospace;">{{ viatura.chassi|default:"Não informado" }}</div>
+        </div>
+        <div class="col-4">
+          <small class="pf-small">Tipo de Viatura</small>
+          <div style="font-size: 14px;">{{ viatura.get_tipo_display }}</div>
+        </div>
+
+        <div class="col-6">
+          <small class="pf-small">Unidade Pertencente</small>
+          <div style="font-size: 14px; font-weight: 500;">{{ viatura.setor_pertencente.sigla }} — {{ viatura.setor_pertencente.nome }}</div>
+        </div>
+        <div class="col-6">
+          <small class="pf-small">Responsável Acautelado</small>
+          <div style="font-size: 14px; font-weight: 500;">{{ viatura.identificacao_responsavel }} ({{ viatura.get_responsavel_tipo_display }})</div>
+        </div>
+
+        {% if viatura.observacoes %}
+          <div class="col-12" style="background: var(--pf-grey-100); padding: var(--space-12); border-radius: 4px;">
+            <small class="pf-small">Observações Gerais e Histórico de Avarias</small>
+            <div style="font-size: 13px; margin-top: 4px;">{{ viatura.observacoes }}</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Painel de Odômetro e Manutenção -->
+  <div class="col-4">
+    <div class="pf-card" style="height: 100%;">
+      <div class="pf-card-header">
+        <div class="pf-card-title">
+          <i class="fas fa-tachometer-alt"></i> Quilometragem & Revisão
+        </div>
+      </div>
+
+      <div style="text-align: center; padding: var(--space-16) 0; border-bottom: 1px solid var(--pf-grey-200);">
+        <small class="pf-small">ODÔMETRO ATUAL</small>
+        <div style="font-size: 32px; font-weight: 700; color: var(--pf-black); font-family: monospace;">
+          {{ viatura.km_atual|stringformat:"d" }} <span style="font-size: 16px; font-family: 'Roboto';">KM</span>
+        </div>
+      </div>
+
+      <div style="padding-top: var(--space-16);">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="pf-small">Próxima Revisão (KM):</span>
+          <strong>{% if viatura.proxima_manutencao_km %}{{ viatura.proxima_manutencao_km|stringformat:"d" }} km{% else %}Não agendada{% endif %}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="pf-small">Próxima Revisão (Data):</span>
+          <strong>{% if viatura.proxima_manutencao_data %}{{ viatura.proxima_manutencao_data|date:"d/m/Y" }}{% else %}Não agendada{% endif %}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span class="pf-small">Total de Manutenções:</span>
+          <strong>{{ manutencoes.count }} registros</strong>
+        </div>
+
+        <div style="margin-top: var(--space-16);">
+          <a href="{% url 'veiculos:manutencao_criar' viatura.pk %}" class="pf-btn pf-btn-secondary" style="width: 100%;">
+            <i class="fas fa-plus"></i> Agendar / Nova Manutenção
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabela de Histórico de Manutenções -->
+<div class="pf-card">
+  <div class="pf-card-header">
+    <div class="pf-card-title">
+      <i class="fas fa-history"></i> Histórico de Manutenções do Veículo
+    </div>
+    <div>
+      <a href="{% url 'veiculos:manutencao_criar' viatura.pk %}" class="pf-btn pf-btn-sm pf-btn-primary">
+        <i class="fas fa-plus"></i> Nova Manutenção
+      </a>
+    </div>
+  </div>
+
+  <div class="pf-table-wrapper">
+    <table class="pf-table">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Tipo</th>
+          <th>Odômetro</th>
+          <th>Oficina / Fornecedor</th>
+          <th>Nº OS / NF</th>
+          <th>Descrição dos Serviços</th>
+          <th>Peças Trocadas</th>
+          <th style="text-align: right;">Valor Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in manutencoes %}
+          <tr>
+            <td><strong>{{ m.data_manutencao|date:"d/m/Y" }}</strong></td>
+            <td>
+              {% if m.tipo == 'PREVENTIVA' %}
+                <span class="pf-badge pf-badge-info">Preventiva</span>
+              {% elif m.tipo == 'CORRETIVA' %}
+                <span class="pf-badge pf-badge-warning">Corretiva</span>
+              {% elif m.tipo == 'SINISTRO' %}
+                <span class="pf-badge pf-badge-danger">Sinistro</span>
+              {% else %}
+                <span class="pf-badge pf-badge-success">Revisão</span>
+              {% endif %}
+            </td>
+            <td>{{ m.km_no_momento|stringformat:"d" }} km</td>
+            <td>{{ m.fornecedor_oficina }}</td>
+            <td><code>{{ m.numero_ordem_servico|default:"-" }}</code></td>
+            <td>{{ m.descricao_servico }}</td>
+            <td><small class="pf-small">{{ m.pecas_substituidas|default:"-" }}</small></td>
+            <td style="text-align: right; font-weight: 700; color: var(--pf-blue-500);">
+              R$ {{ m.valor_total|floatformat:2 }}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: var(--space-24);">
+              <i class="fas fa-tools" style="font-size: 24px; color: var(--pf-grey-400); margin-bottom: 8px;"></i>
+              <p>Nenhuma manutenção registrada para este veículo até o momento.</p>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Últimas Movimentações na Ficha Diária -->
+<div class="pf-card">
+  <div class="pf-card-header">
+    <div class="pf-card-title">
+      <i class="fas fa-exchange-alt"></i> Últimas Saídas Registradas nas Fichas Diárias
+    </div>
+  </div>
+
+  <div class="pf-table-wrapper">
+    <table class="pf-table">
+      <thead>
+        <tr>
+          <th>Data Expediente</th>
+          <th>Condutor</th>
+          <th>Destino / Missão</th>
+          <th>Saída (Hora/KM)</th>
+          <th>Chegada (Hora/KM)</th>
+          <th>KM Percorrido</th>
+          <th>Avarias</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for reg in ultimos_usos %}
+          <tr>
+            <td>
+              <a href="{% url 'fichas:detalhe' reg.ficha.pk %}" style="color: var(--pf-blue-500); font-weight: 700; text-decoration: none;">
+                {{ reg.ficha.data_expediente|date:"d/m/Y" }}
+              </a>
+            </td>
+            <td><strong>{{ reg.condutor }}</strong></td>
+            <td>{{ reg.destino }}</td>
+            <td>{{ reg.horario_saida|time:"H:i" }} ({{ reg.odometro_saida|stringformat:"d" }} km)</td>
+            <td>
+              {% if reg.horario_chegada %}
+                {{ reg.horario_chegada|time:"H:i" }} ({{ reg.odometro_chegada|stringformat:"d" }} km)
+              {% else %}
+                <span class="pf-badge pf-badge-info"><i class="fas fa-road"></i> Em Trânsito</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if reg.odometro_chegada %}
+                <strong>{{ reg.km_percorrido|stringformat:"d" }} km</strong>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>
+              {% if reg.possui_avarias %}
+                <span class="pf-badge pf-badge-danger" title="{{ reg.avarias_encontradas }}">
+                  <i class="fas fa-exclamation-triangle"></i> Sim
+                </span>
+              {% else %}
+                <span class="pf-badge pf-badge-success">Não</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if reg.status == 'CONCLUIDO' %}
+                <span class="pf-badge pf-badge-success">Retornou</span>
+              {% elif reg.status == 'EM_TRANSITO' %}
+                <span class="pf-badge pf-badge-info">Na Rua</span>
+              {% else %}
+                <span class="pf-badge pf-badge-danger">Cancelado</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: var(--space-24);">
+              <p>Nenhuma saída recente registrada para esta viatura.</p>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
