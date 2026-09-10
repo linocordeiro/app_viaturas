@@ -1,6 +1,6 @@
 from datetime import date, time
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
 from veiculos.models import Viatura
@@ -224,8 +224,11 @@ class RegistroUso(models.Model):
 
     def clean(self):
         # Validação de ficha encerrada
-        if self.ficha and self.ficha.status == FichaControle.STATUS_ENCERRADA and not self.pk:
-            raise ValidationError("Não é permitido inserir novos registros em uma ficha já encerrada.")
+        try:
+            if getattr(self, 'ficha_id', None) and self.ficha.status == FichaControle.STATUS_ENCERRADA and not self.pk:
+                raise ValidationError("Não é permitido inserir novos registros em uma ficha já encerrada.")
+        except ObjectDoesNotExist:
+            pass
 
         # Validação de odômetro
         if self.odometro_chegada is not None and self.odometro_saida is not None:
@@ -235,8 +238,20 @@ class RegistroUso(models.Model):
                 })
 
     def save(self, *args, **kwargs):
+        old_viatura_id = None
+        if self.pk:
+            old_viatura_id = RegistroUso.objects.filter(pk=self.pk).values_list('viatura_id', flat=True).first()
+
         self.clean()
         super().save(*args, **kwargs)
+
+        # Se trocou a viatura associada, libera a anterior se estiver em uso
+        if old_viatura_id and old_viatura_id != self.viatura_id:
+            old_v = Viatura.objects.filter(pk=old_viatura_id).first()
+            if old_v and old_v.status == Viatura.STATUS_EM_USO:
+                if not RegistroUso.objects.filter(viatura=old_v, status=self.STATUS_EM_TRANSITO).exists():
+                    old_v.status = Viatura.STATUS_DISPONIVEL
+                    old_v.save(update_fields=['status'])
 
         # Regras de atualização de estado da viatura
         v = self.viatura

@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from .models import FichaControle, RegistroUso
-from .forms import FichaControleForm, RegistroSaidaForm, RegistroChegadaForm
+from .forms import FichaControleForm, RegistroSaidaForm, RegistroChegadaForm, RegistroEdicaoForm
 from veiculos.models import Viatura
 from services.relatorios_pdf import gerar_pdf_ficha
 from services.relatorios_excel import gerar_excel_ficha
@@ -123,6 +123,7 @@ def registro_saida_criar(request, ficha_pk):
 
     if request.method == 'POST':
         form = RegistroSaidaForm(request.POST)
+        form.instance.ficha = ficha
         if form.is_valid():
             reg = form.save(commit=False)
             reg.ficha = ficha
@@ -186,18 +187,18 @@ def registro_editar(request, pk):
         return redirect('fichas:detalhe', pk=ficha.pk)
 
     if request.method == 'POST':
-        form = RegistroSaidaForm(request.POST, instance=registro)
+        form = RegistroEdicaoForm(request.POST, instance=registro)
         if form.is_valid():
-            form.save()
-            messages.success(request, f"Registro da viatura {registro.viatura.placa} atualizado.")
+            reg = form.save()
+            messages.success(request, f"Registro de uso da viatura {reg.viatura.placa} atualizado com sucesso.")
             return redirect('fichas:detalhe', pk=ficha.pk)
     else:
-        form = RegistroSaidaForm(instance=registro)
+        form = RegistroEdicaoForm(instance=registro)
 
-    return render(request, 'fichas/registro_saida_form.html', {
+    return render(request, 'fichas/registro_editar_form.html', {
         'form': form,
+        'registro': registro,
         'ficha': ficha,
-        'is_edit': True,
     })
 
 

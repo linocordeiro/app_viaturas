@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Registro de Viatura - {{ registro.viatura.placa }}{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <a href="{% url 'fichas:lista' %}">Fichas de Controle</a>
+  <span>/</span>
+  <a href="{% url 'fichas:detalhe' ficha.pk %}">{{ ficha.data_expediente|date:"d/m/Y" }}</a>
+  <span>/</span>
+  <strong>Editar Registro ({{ registro.viatura.placa }})</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2>
+      <i class="fas fa-edit" style="color: var(--pf-blue-500); margin-right: 8px;"></i>
+      Editar Registro de Movimentação de Viatura
+    </h2>
+    <p>
+      Ficha: <strong>{{ ficha.data_expediente|date:"d/m/Y" }}</strong> • 
+      Viatura Atual: <strong>{{ registro.viatura.placa }} ({{ registro.viatura.marca }} {{ registro.viatura.modelo }})</strong> • 
+      Status Atual: 
+      {% if registro.status == 'EM_TRANSITO' %}
+        <span class="pf-badge pf-badge-info"><i class="fas fa-road"></i> Em Trânsito</span>
+      {% elif registro.status == 'CONCLUIDO' %}
+        <span class="pf-badge pf-badge-success"><i class="fas fa-check-circle"></i> Concluído</span>
+      {% else %}
+        <span class="pf-badge pf-badge-dark">{{ registro.get_status_display }}</span>
+      {% endif %}
+    </p>
+  </div>
+  <div>
+    <a href="{% url 'fichas:detalhe' ficha.pk %}" class="pf-btn pf-btn-secondary">
+      <i class="fas fa-arrow-left"></i> Voltar à Ficha
+    </a>
+  </div>
+</div>
+
+<div class="pf-card">
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div style="background-color: #FEECEB; border: 1px solid var(--pf-red-500); border-radius: 4px; padding: var(--space-12); margin-bottom: var(--space-16); color: var(--pf-red-700);">
+        {% for error in form.non_field_errors %}
+          <div><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- 1. DADOS DE SAÍDA -->
+    <div class="pf-card-header" style="margin-top: 0;">
+      <div class="pf-card-title">
+        <i class="fas fa-sign-out-alt" style="color: var(--pf-blue-500);"></i> 1. Dados de Saída do Veículo
+      </div>
+    </div>
+
+    <div class="pf-form-grid">
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.viatura.id_for_label }}" class="required">Viatura Oficial</label>
+          {{ form.viatura }}
+          {% if form.viatura.errors %}<div class="pf-error-text">{{ form.viatura.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.condutor.id_for_label }}" class="required">Condutor (Nome e Matrícula)</label>
+          {{ form.condutor }}
+          {% if form.condutor.errors %}<div class="pf-error-text">{{ form.condutor.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.destino.id_for_label }}" class="required">Destino / Missão / Operação</label>
+          {{ form.destino }}
+          {% if form.destino.errors %}<div class="pf-error-text">{{ form.destino.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.horario_saida.id_for_label }}" class="required">Horário de Saída</label>
+          {{ form.horario_saida }}
+          {% if form.horario_saida.errors %}<div class="pf-error-text">{{ form.horario_saida.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-3">
+        <div class="pf-field">
+          <label for="{{ form.odometro_saida.id_for_label }}" class="required">Odômetro Saída (KM)</label>
+          {{ form.odometro_saida }}
+          {% if form.odometro_saida.errors %}<div class="pf-error-text">{{ form.odometro_saida.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. DADOS DE CHEGADA / RETORNO -->
+    <div class="pf-card-header" style="margin-top: var(--space-24); border-top: 1px solid var(--pf-grey-200); padding-top: var(--space-16);">
+      <div class="pf-card-title">
+        <i class="fas fa-sign-in-alt" style="color: var(--pf-green-500);"></i> 2. Dados de Chegada / Retorno e Avarias
+      </div>
+    </div>
+
+    <div class="pf-form-grid">
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.horario_chegada.id_for_label }}">Horário de Chegada</label>
+          {{ form.horario_chegada }}
+          <small class="pf-small">Deixe em branco se a viatura ainda estiver em trânsito.</small>
+          {% if form.horario_chegada.errors %}<div class="pf-error-text">{{ form.horario_chegada.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.odometro_chegada.id_for_label }}">Odômetro Chegada (KM)</label>
+          {{ form.odometro_chegada }}
+          <small class="pf-small">Deve ser igual ou superior ao odômetro de saída.</small>
+          {% if form.odometro_chegada.errors %}<div class="pf-error-text">{{ form.odometro_chegada.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-12" style="margin-top: var(--space-8);">
+        <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; color: var(--pf-red-700);">
+          {{ form.possui_avarias }}
+          <span>O veículo possui avarias constatadas no retorno?</span>
+        </label>
+        <small class="pf-small">Marque caso haja amassados, arranhões, avarias mecânicas ou avarias relatadas.</small>
+      </div>
+
+      <div class="col-12" style="margin-top: var(--space-8);">
+        <div class="pf-field">
+          <label for="{{ form.avarias_encontradas.id_for_label }}">Espaço para Anotar as Avarias Encontradas</label>
+          {{ form.avarias_encontradas }}
+          <small class="pf-small">Obrigatório se a opção acima estiver marcada.</small>
+          {% if form.avarias_encontradas.errors %}<div class="pf-error-text">{{ form.avarias_encontradas.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. STATUS DA MOVIMENTAÇÃO -->
+    <div class="pf-card-header" style="margin-top: var(--space-24); border-top: 1px solid var(--pf-grey-200); padding-top: var(--space-16);">
+      <div class="pf-card-title">
+        <i class="fas fa-tasks" style="color: var(--pf-blue-500);"></i> 3. Status do Registro
+      </div>
+    </div>
+
+    <div class="pf-form-grid">
+      <div class="col-6">
+        <div class="pf-field">
+          <label for="{{ form.status.id_for_label }}" class="required">Situação Atual do Registro</label>
+          {{ form.status }}
+          <small class="pf-small">Se horário e KM de chegada forem preenchidos, o status será automaticamente atualizado para <strong>Concluído</strong>.</small>
+          {% if form.status.errors %}<div class="pf-error-text">{{ form.status.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTÕES DE AÇÃO -->
+    <div style="display: flex; justify-content: flex-end; gap: var(--space-8); margin-top: var(--space-24); border-top: 1px solid var(--pf-grey-200); padding-top: var(--space-16);">
+      <a href="{% url 'fichas:detalhe' ficha.pk %}" class="pf-btn pf-btn-ghost">
+        <i class="fas fa-times"></i> Cancelar
+      </a>
+      <button type="submit" class="pf-btn pf-btn-primary">
+        <i class="fas fa-save"></i> Salvar Alterações
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

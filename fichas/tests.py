@@ -168,3 +168,67 @@ class FichaControleTestCase(TestCase):
 
         excel_bytes = gerar_excel_ficha(self.ficha)
         self.assertTrue(excel_bytes.startswith(b'PK\x03\x04'))
+
+    def test_registro_editar_com_dados_chegada(self):
+        """Verifica se a view registro_editar permite preencher/editar dados de chegada."""
+        self.client.force_login(self.vigilante)
+        registro = RegistroUso.objects.create(
+            ficha=self.ficha,
+            viatura=self.viatura,
+            condutor='APF Paulo Souza',
+            destino='Operação Ronda',
+            horario_saida=time(10, 0),
+            odometro_saida=20000,
+            status=RegistroUso.STATUS_EM_TRANSITO,
+            registrado_por=self.vigilante
+        )
+
+        # GET na página de edição
+        response = self.client.get(f'/fichas/registro/{registro.pk}/editar/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Editar Registro de Movimentação de Viatura')
+        self.assertContains(response, 'Dados de Chegada / Retorno e Avarias')
+
+        # POST atualizando tanto saída quanto preenchendo a chegada
+        post_data = {
+            'viatura': self.viatura.pk,
+            'condutor': 'APF Paulo Souza (Mat. 9988)',
+            'destino': 'Operação Ronda - Centro',
+            'horario_saida': '10:00',
+            'odometro_saida': 20000,
+            'horario_chegada': '12:30',
+            'odometro_chegada': 20060,
+            'possui_avarias': True,
+            'avarias_encontradas': 'Farol de milha direito com lâmpada queimada.',
+            'status': RegistroUso.STATUS_EM_TRANSITO  # Deve auto-ajustar para CONCLUIDO
+        }
+        post_resp = self.client.post(f'/fichas/registro/{registro.pk}/editar/', data=post_data)
+        self.assertEqual(post_resp.status_code, 302)
+
+        registro.refresh_from_db()
+        self.assertEqual(registro.condutor, 'APF Paulo Souza (Mat. 9988)')
+        self.assertEqual(registro.horario_chegada, time(12, 30))
+        self.assertEqual(registro.odometro_chegada, 20060)
+        self.assertEqual(registro.km_percorrido, 60)
+        self.assertTrue(registro.possui_avarias)
+        self.assertEqual(registro.avarias_encontradas, 'Farol de milha direito com lâmpada queimada.')
+        self.assertEqual(registro.status, RegistroUso.STATUS_CONCLUIDO)
+
+        self.viatura.refresh_from_db()
+        self.assertEqual(self.viatura.status, Viatura.STATUS_DISPONIVEL)
+        self.assertEqual(self.viatura.km_atual, 20060)
+
+    def test_registro_saida_criar_view(self):
+        """Verifica que a view registro_saida_criar não dispara RelatedObjectDoesNotExist."""
+        self.client.force_login(self.vigilante)
+        post_data = {
+            'viatura': self.viatura.pk,
+            'condutor': 'APF Marcos Teste',
+            'destino': 'Diligência',
+            'horario_saida': '14:00',
+            'odometro_saida': 20000,
+        }
+        response = self.client.post(f'/fichas/{self.ficha.pk}/saida/', data=post_data)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(RegistroUso.objects.filter(condutor='APF Marcos Teste').exists())
+

@@ -86,3 +86,77 @@ class RegistroChegadaForm(forms.ModelForm):
             self.add_error('avarias_encontradas', 'Ao marcar que o veículo possui avarias, é obrigatório preencher o espaço para anotar as avarias encontradas.')
 
         return cleaned_data
+
+
+class RegistroEdicaoForm(forms.ModelForm):
+    """
+    Formulário para edição completa do registro de uso de viatura,
+    permitindo alterar dados de saída, dados de retorno/chegada e o status.
+    """
+    class Meta:
+        model = RegistroUso
+        fields = [
+            'viatura', 'condutor', 'destino', 'horario_saida', 'odometro_saida',
+            'horario_chegada', 'odometro_chegada', 'possui_avarias', 'avarias_encontradas',
+            'status'
+        ]
+        widgets = {
+            'viatura': forms.Select(attrs={'class': 'pf-select'}),
+            'condutor': forms.TextInput(attrs={'class': 'pf-input', 'placeholder': 'Nome e matrícula do condutor'}),
+            'destino': forms.TextInput(attrs={'class': 'pf-input', 'placeholder': 'Destino / Missão / Operação'}),
+            'horario_saida': forms.TimeInput(attrs={'class': 'pf-input', 'type': 'time'}),
+            'odometro_saida': forms.NumberInput(attrs={'class': 'pf-input', 'placeholder': 'KM de saída'}),
+            'horario_chegada': forms.TimeInput(attrs={'class': 'pf-input', 'type': 'time'}),
+            'odometro_chegada': forms.NumberInput(attrs={'class': 'pf-input', 'placeholder': 'KM de retorno'}),
+            'possui_avarias': forms.CheckboxInput(attrs={'class': 'pf-checkbox'}),
+            'avarias_encontradas': forms.Textarea(attrs={'class': 'pf-textarea', 'rows': 3, 'placeholder': 'Descreva avarias, problemas mecânicos ou avarias encontradas...'}),
+            'status': forms.Select(attrs={'class': 'pf-select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Permite selecionar qualquer viatura ativa no pátio
+        self.fields['viatura'].queryset = Viatura.objects.filter(ativo=True)
+        # Campos de chegada podem ser vazios caso a viatura ainda esteja em trânsito
+        self.fields['horario_chegada'].required = False
+        self.fields['odometro_chegada'].required = False
+        self.fields['avarias_encontradas'].required = False
+
+        if self.instance.horario_saida and hasattr(self.instance.horario_saida, 'strftime'):
+            self.initial['horario_saida'] = self.instance.horario_saida.strftime('%H:%M')
+        if self.instance.horario_chegada and hasattr(self.instance.horario_chegada, 'strftime'):
+            self.initial['horario_chegada'] = self.instance.horario_chegada.strftime('%H:%M')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        odometro_saida = cleaned_data.get('odometro_saida')
+        horario_chegada = cleaned_data.get('horario_chegada')
+        odometro_chegada = cleaned_data.get('odometro_chegada')
+        possui_avarias = cleaned_data.get('possui_avarias')
+        avarias = cleaned_data.get('avarias_encontradas')
+        status = cleaned_data.get('status')
+
+        # Se informou apenas horário ou apenas odômetro de chegada
+        if horario_chegada and odometro_chegada is None:
+            self.add_error('odometro_chegada', 'Ao informar o retorno da viatura, informe também o odômetro de chegada.')
+        elif odometro_chegada is not None and not horario_chegada:
+            self.add_error('horario_chegada', 'Ao informar o retorno da viatura, informe também o horário de chegada.')
+
+        # Validação do odômetro
+        if odometro_saida is not None and odometro_chegada is not None:
+            if odometro_chegada < odometro_saida:
+                self.add_error('odometro_chegada', f"Odômetro de chegada ({odometro_chegada} km) não pode ser inferior ao de saída ({odometro_saida} km).")
+
+        # Validação de avarias
+        if possui_avarias and not avarias:
+            self.add_error('avarias_encontradas', 'Ao marcar que o veículo possui avarias, é obrigatório preencher a descrição das avarias encontradas.')
+
+        # Sincronização de status
+        if horario_chegada and odometro_chegada is not None:
+            if status == RegistroUso.STATUS_EM_TRANSITO:
+                cleaned_data['status'] = RegistroUso.STATUS_CONCLUIDO
+        elif not horario_chegada and odometro_chegada is None:
+            if status == RegistroUso.STATUS_CONCLUIDO:
+                cleaned_data['status'] = RegistroUso.STATUS_EM_TRANSITO
+
+        return cleaned_data
