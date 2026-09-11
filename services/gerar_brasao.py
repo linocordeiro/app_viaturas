@@ -1,10 +1,12 @@
+import math
+from pathlib import Path
+
 from PIL import Image, ImageDraw, ImageFont
-import os
 
 # Create a clean institutional badge for Polícia Federal
 width = 400
 height = 480
-image = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
 draw = ImageDraw.Draw(image)
 
 # Colors from Frontline PF
@@ -45,8 +47,8 @@ draw.ellipse([center_x - 90, center_y - 90, center_x + 90, center_y + 90], outli
 draw.ellipse([center_x - 70, center_y - 70, center_x + 70, center_y + 70], fill=blue, outline=gold, width=3)
 
 # 5-pointed star in center
-import math
 star_points = []
+
 for i in range(10):
     r = 55 if i % 2 == 0 else 24
     angle = i * math.pi / 5 - math.pi / 2
@@ -69,7 +71,7 @@ try:
     font = ImageFont.truetype("arial.ttf", 22)
     font_small = ImageFont.truetype("arial.ttf", 16)
     font_bold = ImageFont.truetype("arialbd.ttf", 20)
-except Exception:
+except OSError:
     font = ImageFont.load_default()
     font_small = font
     font_bold = font
@@ -77,6 +79,8 @@ except Exception:
 draw.text((115, 82), "POLÍCIA FEDERAL", fill=black, font=font_bold)
 draw.text((120, 360), "ORDEM E PROGRESSO", fill=gold, font=font_small)
 
-os.makedirs('static/img', exist_ok=True)
-image.save('static/img/brasao_pf.png', 'PNG')
+output_dir = Path("static/img")
+output_dir.mkdir(parents=True, exist_ok=True)
+image.save(output_dir / "brasao_pf.png", "PNG")
 print("Successfully generated static/img/brasao_pf.png")
+

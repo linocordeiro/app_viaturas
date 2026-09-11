@@ -6,54 +6,54 @@ class Usuario(AbstractUser):
     """
     Modelo de usuário customizado para o sistema APP_VIATURAS da Polícia Federal.
     """
-    PERFIL_VIGILANTE = 'VIGILANTE'
-    PERFIL_RESPONSAVEL = 'RESPONSAVEL_VIATURAS'
-    PERFIL_CHEFIA = 'CHEFIA'
-    PERFIL_ADMIN = 'ADMINISTRADOR'
+    PERFIL_VIGILANTE = "VIGILANTE"
+    PERFIL_RESPONSAVEL = "RESPONSAVEL_VIATURAS"
+    PERFIL_CHEFIA = "CHEFIA"
+    PERFIL_ADMIN = "ADMINISTRADOR"
 
     PERFIL_CHOICES = [
-        (PERFIL_VIGILANTE, 'Vigilante / Portaria'),
-        (PERFIL_RESPONSAVEL, 'Responsável pelas Viaturas'),
-        (PERFIL_CHEFIA, 'Chefia'),
-        (PERFIL_ADMIN, 'Administrador do Sistema'),
+        (PERFIL_VIGILANTE, "Vigilante / Portaria"),
+        (PERFIL_RESPONSAVEL, "Responsável pelas Viaturas"),
+        (PERFIL_CHEFIA, "Chefia"),
+        (PERFIL_ADMIN, "Administrador do Sistema"),
     ]
 
     matricula = models.CharField(
-        'Matrícula / Identificação',
+        "Matrícula / Identificação",
         max_length=30,
         blank=True,
         null=True,
-        help_text='Matrícula funcional do servidor ou identificação do vigilante'
+        help_text="Matrícula funcional do servidor ou identificação do vigilante"
     )
     cargo = models.CharField(
-        'Cargo / Função',
+        "Cargo / Função",
         max_length=100,
         blank=True,
-        default='Vigilante'
+        default="Vigilante"
     )
     setor = models.CharField(
-        'Setor / Unidade',
+        "Setor / Unidade",
         max_length=100,
         blank=True,
-        default='Portaria Principal'
+        default="Portaria Principal"
     )
     telefone = models.CharField(
-        'Telefone / Ramal',
+        "Telefone / Ramal",
         max_length=20,
         blank=True,
         null=True
     )
     perfil = models.CharField(
-        'Perfil de Acesso',
+        "Perfil de Acesso",
         max_length=30,
         choices=PERFIL_CHOICES,
         default=PERFIL_VIGILANTE
     )
 
     class Meta:
-        verbose_name = 'Usuário'
-        verbose_name_plural = 'Usuários'
-        ordering = ['first_name', 'last_name', 'username']
+        verbose_name = "Usuário"
+        verbose_name_plural = "Usuários"
+        ordering = ["first_name", "last_name", "username"]
 
     def __str__(self):
         nome = self.get_full_name()

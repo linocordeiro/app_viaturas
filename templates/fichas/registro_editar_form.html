@@ -74,7 +74,7 @@
         </div>
       </div>
 
-      <div class="col-6">
+      <div class="col-12">
         <div class="pf-field">
           <label for="{{ form.destino.id_for_label }}" class="required">Destino / Missão / Operação</label>
           {{ form.destino }}
@@ -82,7 +82,15 @@
         </div>
       </div>
 
-      <div class="col-3">
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.data_saida.id_for_label }}" class="required">Data de Saída</label>
+          {{ form.data_saida }}
+          {% if form.data_saida.errors %}<div class="pf-error-text">{{ form.data_saida.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
         <div class="pf-field">
           <label for="{{ form.horario_saida.id_for_label }}" class="required">Horário de Saída</label>
           {{ form.horario_saida }}
@@ -90,7 +98,7 @@
         </div>
       </div>
 
-      <div class="col-3">
+      <div class="col-4">
         <div class="pf-field">
           <label for="{{ form.odometro_saida.id_for_label }}" class="required">Odômetro Saída (KM)</label>
           {{ form.odometro_saida }}
@@ -107,7 +115,15 @@
     </div>
 
     <div class="pf-form-grid">
-      <div class="col-6">
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.data_chegada.id_for_label }}">Data de Chegada</label>
+          {{ form.data_chegada }}
+          {% if form.data_chegada.errors %}<div class="pf-error-text">{{ form.data_chegada.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
         <div class="pf-field">
           <label for="{{ form.horario_chegada.id_for_label }}">Horário de Chegada</label>
           {{ form.horario_chegada }}
@@ -116,7 +132,7 @@
         </div>
       </div>
 
-      <div class="col-6">
+      <div class="col-4">
         <div class="pf-field">
           <label for="{{ form.odometro_chegada.id_for_label }}">Odômetro Chegada (KM)</label>
           {{ form.odometro_chegada }}

@@ -1,3 +1,17 @@
+[project]
+name = "app-viaturas"
+version = "1.0.0"
+description = "Sistema de Controle de Entrada e Saída de Viaturas da Polícia Federal"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "django>=5.2",
+    "pillow>=11.0",
+    "reportlab>=4.0",
+    "openpyxl>=3.1",
+    "python-dotenv>=1.0",
+]
+
 [tool.ruff]
 line-length = 88
 target-version = "py313"
@@ -56,12 +70,20 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-# Ignora regras especificas em testes
-"tests/**/*.py" = ["ANN201", "S101"]
-"app/tests.py" = ["ANN201", "S101"]
+# Ignora regras específicas em testes (assert e senhas simuladas de fixtures)
+"tests/**/*.py" = ["ANN201", "S101", "S105", "S106"]
+"**/tests.py" = ["ANN201", "S101", "S105", "S106"]
+
+# Modelos e formulários Django utilizam atributos de classe mutáveis e assinatura save(commit=True) por convenção
+"**/models.py" = ["RUF012"]
+"**/forms.py" = ["RUF012", "FBT002"]
+
+# Chave secreta de fallback de desenvolvimento no settings
+"core/settings.py" = ["S105"]
 
 # Ignora verificacoes em arquivos de migracao gerados pelo Django
 "**/migrations/*" = ["E501", "RUF012"]
+
 
 [tool.ruff.format]
 quote-style = "double"
@@ -69,5 +91,5 @@ indent-style = "space"
 line-ending = "lf"
 
 [tool.ruff.lint.isort]
-# Define os pacotes locais do projeto Cosmic
-known-first-party = ["app", "utils"]
+# Define os pacotes locais do projeto APP_VIATURAS
+known-first-party = ["core", "usuarios", "veiculos", "fichas", "dashboard", "services"]

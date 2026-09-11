@@ -37,8 +37,8 @@
         <div style="font-weight: 700;">{{ registro.destino }}</div>
       </div>
       <div class="col-3">
-        <small class="pf-small">Horário de Saída</small>
-        <div style="font-weight: 700;">{{ registro.horario_saida|time:"H:i" }}</div>
+        <small class="pf-small">Saída (Data/Hora)</small>
+        <div style="font-weight: 700;">{{ registro.data_saida|date:"d/m/Y" }} {{ registro.horario_saida|time:"H:i" }}</div>
       </div>
       <div class="col-3">
         <small class="pf-small">Odômetro na Saída</small>
@@ -57,7 +57,15 @@
     </div>
 
     <div class="pf-form-grid">
-      <div class="col-6">
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.data_chegada.id_for_label }}" class="required">{{ form.data_chegada.label }}</label>
+          {{ form.data_chegada }}
+          {% if form.data_chegada.errors %}<div class="pf-error-text">{{ form.data_chegada.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
         <div class="pf-field">
           <label for="{{ form.horario_chegada.id_for_label }}" class="required">{{ form.horario_chegada.label }}</label>
           {{ form.horario_chegada }}
@@ -65,7 +73,7 @@
         </div>
       </div>
 
-      <div class="col-6">
+      <div class="col-4">
         <div class="pf-field">
           <label for="{{ form.odometro_chegada.id_for_label }}" class="required">{{ form.odometro_chegada.label }}</label>
           {{ form.odometro_chegada }}

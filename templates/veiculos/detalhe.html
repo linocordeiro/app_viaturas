@@ -244,8 +244,8 @@
           <th>Data Expediente</th>
           <th>Condutor</th>
           <th>Destino / Missão</th>
-          <th>Saída (Hora/KM)</th>
-          <th>Chegada (Hora/KM)</th>
+          <th>Saída (Data/Hora/KM)</th>
+          <th>Chegada (Data/Hora/KM)</th>
           <th>KM Percorrido</th>
           <th>Avarias</th>
           <th>Status</th>
@@ -261,10 +261,10 @@
             </td>
             <td><strong>{{ reg.condutor }}</strong></td>
             <td>{{ reg.destino }}</td>
-            <td>{{ reg.horario_saida|time:"H:i" }} ({{ reg.odometro_saida|stringformat:"d" }} km)</td>
+            <td>{{ reg.data_saida|date:"d/m/Y" }} às {{ reg.horario_saida|time:"H:i" }} ({{ reg.odometro_saida|stringformat:"d" }} km)</td>
             <td>
               {% if reg.horario_chegada %}
-                {{ reg.horario_chegada|time:"H:i" }} ({{ reg.odometro_chegada|stringformat:"d" }} km)
+                {{ reg.data_chegada|date:"d/m/Y" }} às {{ reg.horario_chegada|time:"H:i" }} ({{ reg.odometro_chegada|stringformat:"d" }} km)
               {% else %}
                 <span class="pf-badge pf-badge-info"><i class="fas fa-road"></i> Em Trânsito</span>
               {% endif %}

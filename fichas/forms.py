@@ -1,89 +1,104 @@
-from datetime import date, time, datetime
+from datetime import datetime
+
 from django import forms
-from .models import FichaControle, RegistroUso
+
 from veiculos.models import Viatura
+
+from .models import FichaControle, RegistroUso
 
 
 class FichaControleForm(forms.ModelForm):
     class Meta:
         model = FichaControle
-        fields = ['data_expediente', 'horario_inicio', 'horario_termino', 'nome_vigilante', 'observacoes']
+        fields = ["data_expediente", "horario_inicio", "horario_termino", "nome_vigilante", "observacoes"]
         widgets = {
-            'data_expediente': forms.DateInput(attrs={'class': 'pf-input', 'type': 'date'}),
-            'horario_inicio': forms.TimeInput(attrs={'class': 'pf-input', 'type': 'time'}),
-            'horario_termino': forms.TimeInput(attrs={'class': 'pf-input', 'type': 'time'}),
-            'nome_vigilante': forms.TextInput(attrs={'class': 'pf-input', 'placeholder': 'Nome completo do vigilante do dia'}),
-            'observacoes': forms.Textarea(attrs={'class': 'pf-textarea', 'rows': 2, 'placeholder': 'Observações do plantão / expediente...'}),
+            "data_expediente": forms.DateInput(attrs={"class": "pf-input", "type": "date"}),
+            "horario_inicio": forms.TimeInput(attrs={"class": "pf-input", "type": "time"}),
+            "horario_termino": forms.TimeInput(attrs={"class": "pf-input", "type": "time"}),
+            "nome_vigilante": forms.TextInput(attrs={"class": "pf-input", "placeholder": "Nome completo do vigilante do dia"}),
+            "observacoes": forms.Textarea(attrs={"class": "pf-textarea", "rows": 2, "placeholder": "Observações do plantão / expediente..."}),
         }
 
     def clean_data_expediente(self):
-        data_exp = self.cleaned_data.get('data_expediente')
+        data_exp = self.cleaned_data.get("data_expediente")
         # Verifica se já existe outra ficha para este dia
         qs = FichaControle.objects.filter(data_expediente=data_exp)
         if self.instance.pk:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise forms.ValidationError(f'Já existe uma Ficha de Controle cadastrada para a data {data_exp.strftime("%d/%m/%Y")}. Não é permitido duplicar fichas no mesmo dia.')
+            msg = (
+                f"Já existe uma Ficha de Controle cadastrada para a data "
+                f"{data_exp.strftime('%d/%m/%Y')}. Não é permitido duplicar fichas no mesmo dia."
+            )
+            raise forms.ValidationError(msg)
         return data_exp
 
 
 class RegistroSaidaForm(forms.ModelForm):
     class Meta:
         model = RegistroUso
-        fields = ['viatura', 'condutor', 'destino', 'horario_saida', 'odometro_saida']
+        fields = ["viatura", "condutor", "destino", "data_saida", "horario_saida", "odometro_saida"]
         widgets = {
-            'viatura': forms.Select(attrs={'class': 'pf-select'}),
-            'condutor': forms.TextInput(attrs={'class': 'pf-input', 'placeholder': 'Nome e matrícula do condutor'}),
-            'destino': forms.TextInput(attrs={'class': 'pf-input', 'placeholder': 'Destino / Missão / Operação'}),
-            'horario_saida': forms.TimeInput(attrs={'class': 'pf-input', 'type': 'time'}),
-            'odometro_saida': forms.NumberInput(attrs={'class': 'pf-input', 'placeholder': 'KM de saída'}),
+            "viatura": forms.Select(attrs={"class": "pf-select"}),
+            "condutor": forms.TextInput(attrs={"class": "pf-input", "placeholder": "Nome e matrícula do condutor"}),
+            "destino": forms.TextInput(attrs={"class": "pf-input", "placeholder": "Destino / Missão / Operação"}),
+            "data_saida": forms.DateInput(attrs={"class": "pf-input", "type": "date"}),
+            "horario_saida": forms.TimeInput(attrs={"class": "pf-input", "type": "time"}),
+            "odometro_saida": forms.NumberInput(attrs={"class": "pf-input", "placeholder": "KM de saída"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Permite selecionar apenas viaturas ativas e disponíveis (ou a viatura já associada se for edição)
         if self.instance.pk:
-            self.fields['viatura'].queryset = Viatura.objects.filter(ativo=True)
+            self.fields["viatura"].queryset = Viatura.objects.filter(ativo=True)
         else:
-            self.fields['viatura'].queryset = Viatura.objects.filter(ativo=True, status=Viatura.STATUS_DISPONIVEL)
+            self.fields["viatura"].queryset = Viatura.objects.filter(ativo=True, status=Viatura.STATUS_DISPONIVEL)
             # Define hora atual padrão
-            self.initial['horario_saida'] = datetime.now().strftime('%H:%M')
+            self.initial["data_saida"] = datetime.now().strftime("%Y-%m-%d")
+            self.initial["horario_saida"] = datetime.now().strftime("%H:%M")
 
 
 class RegistroChegadaForm(forms.ModelForm):
     class Meta:
         model = RegistroUso
-        fields = ['horario_chegada', 'odometro_chegada', 'possui_avarias', 'avarias_encontradas']
+        fields = ["data_chegada", "horario_chegada", "odometro_chegada", "possui_avarias", "avarias_encontradas"]
         widgets = {
-            'horario_chegada': forms.TimeInput(attrs={'class': 'pf-input', 'type': 'time'}),
-            'odometro_chegada': forms.NumberInput(attrs={'class': 'pf-input', 'placeholder': 'KM de retorno'}),
-            'possui_avarias': forms.CheckboxInput(attrs={'class': 'pf-checkbox'}),
-            'avarias_encontradas': forms.Textarea(attrs={'class': 'pf-textarea', 'rows': 3, 'placeholder': 'Descreva detalhadamente arranhões, amassados, itens faltantes ou falhas mecânicas...'}),
+            "data_chegada": forms.DateInput(attrs={"class": "pf-input", "type": "date"}),
+            "horario_chegada": forms.TimeInput(attrs={"class": "pf-input", "type": "time"}),
+            "odometro_chegada": forms.NumberInput(attrs={"class": "pf-input", "placeholder": "KM de retorno"}),
+            "possui_avarias": forms.CheckboxInput(attrs={"class": "pf-checkbox"}),
+            "avarias_encontradas": forms.Textarea(attrs={"class": "pf-textarea", "rows": 3, "placeholder": "Descreva detalhadamente arranhões, amassados, itens faltantes ou falhas mecânicas..."}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if not self.instance.data_chegada:
+            self.initial["data_chegada"] = datetime.now().strftime("%Y-%m-%d")
         if not self.instance.horario_chegada:
-            self.initial['horario_chegada'] = datetime.now().strftime('%H:%M')
+            self.initial["horario_chegada"] = datetime.now().strftime("%H:%M")
         if not self.instance.odometro_chegada and self.instance.odometro_saida:
-            self.initial['odometro_chegada'] = self.instance.odometro_saida
+            self.initial["odometro_chegada"] = self.instance.odometro_saida
 
     def clean(self):
         cleaned_data = super().clean()
-        horario_chegada = cleaned_data.get('horario_chegada')
-        odometro_chegada = cleaned_data.get('odometro_chegada')
-        possui_avarias = cleaned_data.get('possui_avarias')
-        avarias = cleaned_data.get('avarias_encontradas')
+        data_chegada = cleaned_data.get("data_chegada")
+        horario_chegada = cleaned_data.get("horario_chegada")
+        odometro_chegada = cleaned_data.get("odometro_chegada")
+        possui_avarias = cleaned_data.get("possui_avarias")
+        avarias = cleaned_data.get("avarias_encontradas")
 
+        if not data_chegada:
+            self.add_error("data_chegada", "Informe a data de retorno da viatura.")
         if not horario_chegada:
-            self.add_error('horario_chegada', 'Informe o horário de retorno da viatura.')
+            self.add_error("horario_chegada", "Informe o horário de retorno da viatura.")
         if odometro_chegada is None:
-            self.add_error('odometro_chegada', 'Informe o odômetro de retorno da viatura.')
+            self.add_error("odometro_chegada", "Informe o odômetro de retorno da viatura.")
         elif self.instance.odometro_saida and odometro_chegada < self.instance.odometro_saida:
-            self.add_error('odometro_chegada', f"Odômetro de chegada ({odometro_chegada} km) não pode ser inferior ao de saída ({self.instance.odometro_saida} km).")
+            self.add_error("odometro_chegada", f"Odômetro de chegada ({odometro_chegada} km) não pode ser inferior ao de saída ({self.instance.odometro_saida} km).")
 
         if possui_avarias and not avarias:
-            self.add_error('avarias_encontradas', 'Ao marcar que o veículo possui avarias, é obrigatório preencher o espaço para anotar as avarias encontradas.')
+            self.add_error("avarias_encontradas", "Ao marcar que o veículo possui avarias, é obrigatório preencher o espaço para anotar as avarias encontradas.")
 
         return cleaned_data
 
@@ -96,67 +111,99 @@ class RegistroEdicaoForm(forms.ModelForm):
     class Meta:
         model = RegistroUso
         fields = [
-            'viatura', 'condutor', 'destino', 'horario_saida', 'odometro_saida',
-            'horario_chegada', 'odometro_chegada', 'possui_avarias', 'avarias_encontradas',
-            'status'
+            "viatura", "condutor", "destino", "data_saida", "horario_saida", "odometro_saida",
+            "data_chegada", "horario_chegada", "odometro_chegada", "possui_avarias", "avarias_encontradas",
+            "status"
         ]
         widgets = {
-            'viatura': forms.Select(attrs={'class': 'pf-select'}),
-            'condutor': forms.TextInput(attrs={'class': 'pf-input', 'placeholder': 'Nome e matrícula do condutor'}),
-            'destino': forms.TextInput(attrs={'class': 'pf-input', 'placeholder': 'Destino / Missão / Operação'}),
-            'horario_saida': forms.TimeInput(attrs={'class': 'pf-input', 'type': 'time'}),
-            'odometro_saida': forms.NumberInput(attrs={'class': 'pf-input', 'placeholder': 'KM de saída'}),
-            'horario_chegada': forms.TimeInput(attrs={'class': 'pf-input', 'type': 'time'}),
-            'odometro_chegada': forms.NumberInput(attrs={'class': 'pf-input', 'placeholder': 'KM de retorno'}),
-            'possui_avarias': forms.CheckboxInput(attrs={'class': 'pf-checkbox'}),
-            'avarias_encontradas': forms.Textarea(attrs={'class': 'pf-textarea', 'rows': 3, 'placeholder': 'Descreva avarias, problemas mecânicos ou avarias encontradas...'}),
-            'status': forms.Select(attrs={'class': 'pf-select'}),
+            "viatura": forms.Select(attrs={"class": "pf-select"}),
+            "condutor": forms.TextInput(attrs={"class": "pf-input", "placeholder": "Nome e matrícula do condutor"}),
+            "destino": forms.TextInput(attrs={"class": "pf-input", "placeholder": "Destino / Missão / Operação"}),
+            "data_saida": forms.DateInput(attrs={"class": "pf-input", "type": "date"}),
+            "horario_saida": forms.TimeInput(attrs={"class": "pf-input", "type": "time"}),
+            "odometro_saida": forms.NumberInput(attrs={"class": "pf-input", "placeholder": "KM de saída"}),
+            "data_chegada": forms.DateInput(attrs={"class": "pf-input", "type": "date"}),
+            "horario_chegada": forms.TimeInput(attrs={"class": "pf-input", "type": "time"}),
+            "odometro_chegada": forms.NumberInput(attrs={"class": "pf-input", "placeholder": "KM de retorno"}),
+            "possui_avarias": forms.CheckboxInput(attrs={"class": "pf-checkbox"}),
+            "avarias_encontradas": forms.Textarea(attrs={"class": "pf-textarea", "rows": 3, "placeholder": "Descreva avarias, problemas mecânicos ou avarias encontradas..."}),
+            "status": forms.Select(attrs={"class": "pf-select"}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Permite selecionar qualquer viatura ativa no pátio
-        self.fields['viatura'].queryset = Viatura.objects.filter(ativo=True)
+        self.fields["viatura"].queryset = Viatura.objects.filter(ativo=True)
         # Campos de chegada podem ser vazios caso a viatura ainda esteja em trânsito
-        self.fields['horario_chegada'].required = False
-        self.fields['odometro_chegada'].required = False
-        self.fields['avarias_encontradas'].required = False
+        self.fields["data_chegada"].required = False
+        self.fields["horario_chegada"].required = False
+        self.fields["odometro_chegada"].required = False
+        self.fields["avarias_encontradas"].required = False
 
-        if self.instance.horario_saida and hasattr(self.instance.horario_saida, 'strftime'):
-            self.initial['horario_saida'] = self.instance.horario_saida.strftime('%H:%M')
-        if self.instance.horario_chegada and hasattr(self.instance.horario_chegada, 'strftime'):
-            self.initial['horario_chegada'] = self.instance.horario_chegada.strftime('%H:%M')
+        if self.instance.data_saida and hasattr(self.instance.data_saida, "strftime"):
+            self.initial["data_saida"] = self.instance.data_saida.strftime("%Y-%m-%d")
+        if self.instance.horario_saida and hasattr(self.instance.horario_saida, "strftime"):
+            self.initial["horario_saida"] = self.instance.horario_saida.strftime("%H:%M")
+        
+        if self.instance.data_chegada and hasattr(self.instance.data_chegada, "strftime"):
+            self.initial["data_chegada"] = self.instance.data_chegada.strftime("%Y-%m-%d")
+        if self.instance.horario_chegada and hasattr(self.instance.horario_chegada, "strftime"):
+            self.initial["horario_chegada"] = self.instance.horario_chegada.strftime("%H:%M")
 
     def clean(self):
         cleaned_data = super().clean()
-        odometro_saida = cleaned_data.get('odometro_saida')
-        horario_chegada = cleaned_data.get('horario_chegada')
-        odometro_chegada = cleaned_data.get('odometro_chegada')
-        possui_avarias = cleaned_data.get('possui_avarias')
-        avarias = cleaned_data.get('avarias_encontradas')
-        status = cleaned_data.get('status')
+        data_saida = cleaned_data.get("data_saida")
+        odometro_saida = cleaned_data.get("odometro_saida")
+        data_chegada = cleaned_data.get("data_chegada")
+        horario_chegada = cleaned_data.get("horario_chegada")
+        odometro_chegada = cleaned_data.get("odometro_chegada")
+        possui_avarias = cleaned_data.get("possui_avarias")
+        avarias = cleaned_data.get("avarias_encontradas")
+        status = cleaned_data.get("status")
 
-        # Se informou apenas horário ou apenas odômetro de chegada
-        if horario_chegada and odometro_chegada is None:
-            self.add_error('odometro_chegada', 'Ao informar o retorno da viatura, informe também o odômetro de chegada.')
-        elif odometro_chegada is not None and not horario_chegada:
-            self.add_error('horario_chegada', 'Ao informar o retorno da viatura, informe também o horário de chegada.')
+        # Se informou apenas horário, apenas data, ou apenas odômetro de chegada
+        has_chegada = data_chegada or horario_chegada or odometro_chegada is not None
+        if has_chegada:
+            if not data_chegada:
+                self.add_error("data_chegada", "Ao informar o retorno da viatura, informe a data de chegada.")
+            if not horario_chegada:
+                self.add_error("horario_chegada", "Ao informar o retorno da viatura, informe o horário de chegada.")
+            if odometro_chegada is None:
+                self.add_error("odometro_chegada", "Ao informar o retorno da viatura, informe também o odômetro de chegada.")
 
         # Validação do odômetro
-        if odometro_saida is not None and odometro_chegada is not None:
-            if odometro_chegada < odometro_saida:
-                self.add_error('odometro_chegada', f"Odômetro de chegada ({odometro_chegada} km) não pode ser inferior ao de saída ({odometro_saida} km).")
+        if (
+            odometro_saida is not None
+            and odometro_chegada is not None
+            and odometro_chegada < odometro_saida
+        ):
+            self.add_error(
+                "odometro_chegada",
+                f"Odômetro de chegada ({odometro_chegada} km) não pode ser inferior ao de saída ({odometro_saida} km).",
+            )
 
         # Validação de avarias
         if possui_avarias and not avarias:
-            self.add_error('avarias_encontradas', 'Ao marcar que o veículo possui avarias, é obrigatório preencher a descrição das avarias encontradas.')
+            self.add_error(
+                "avarias_encontradas",
+                "Ao marcar que o veículo possui avarias, é obrigatório preencher a descrição das avarias encontradas.",
+            )
 
         # Sincronização de status
-        if horario_chegada and odometro_chegada is not None:
-            if status == RegistroUso.STATUS_EM_TRANSITO:
-                cleaned_data['status'] = RegistroUso.STATUS_CONCLUIDO
-        elif not horario_chegada and odometro_chegada is None:
-            if status == RegistroUso.STATUS_CONCLUIDO:
-                cleaned_data['status'] = RegistroUso.STATUS_EM_TRANSITO
+        if (
+            data_chegada
+            and horario_chegada
+            and odometro_chegada is not None
+            and status == RegistroUso.STATUS_EM_TRANSITO
+        ):
+            cleaned_data["status"] = RegistroUso.STATUS_CONCLUIDO
+        elif (
+            not data_chegada
+            and not horario_chegada
+            and odometro_chegada is None
+            and status == RegistroUso.STATUS_CONCLUIDO
+        ):
+            cleaned_data["status"] = RegistroUso.STATUS_EM_TRANSITO
 
         return cleaned_data
+

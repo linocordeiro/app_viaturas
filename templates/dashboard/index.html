@@ -123,7 +123,7 @@
           <th>Placa</th>
           <th>Condutor</th>
           <th>Destino / Operação</th>
-          <th>Horário Saída</th>
+          <th>Data/Hora Saída</th>
           <th>Odômetro Saída</th>
           <th>Data Expediente</th>
           <th style="text-align: right;">Ação</th>
@@ -142,7 +142,10 @@
             </td>
             <td><strong>{{ reg.condutor }}</strong></td>
             <td>{{ reg.destino }}</td>
-            <td><strong>{{ reg.horario_saida|time:"H:i" }}</strong></td>
+            <td>
+              <div class="pf-small" style="color: var(--pf-grey-500);">{{ reg.data_saida|date:"d/m/Y" }}</div>
+              <strong>{{ reg.horario_saida|time:"H:i" }}</strong>
+            </td>
             <td>{{ reg.odometro_saida|stringformat:"d" }} km</td>
             <td>{{ reg.ficha.data_expediente|date:"d/m/Y" }}</td>
             <td style="text-align: right;">

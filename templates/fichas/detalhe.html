@@ -108,9 +108,9 @@
           <th>Placa</th>
           <th>Condutor</th>
           <th>Destino</th>
-          <th>Horário de Saída</th>
+          <th>Data/Hora de Saída</th>
           <th>Odômetro Saída</th>
-          <th>Horário de Chegada</th>
+          <th>Data/Hora de Chegada</th>
           <th>Odômetro Chegada</th>
           <th>KM Perc.</th>
           <th>Avarias Encontradas</th>
@@ -133,10 +133,14 @@
             </td>
             <td><strong>{{ reg.condutor }}</strong></td>
             <td>{{ reg.destino }}</td>
-            <td><strong>{{ reg.horario_saida|time:"H:i" }}</strong></td>
+            <td>
+              <div class="pf-small" style="color: var(--pf-grey-500);">{{ reg.data_saida|date:"d/m/Y" }}</div>
+              <strong>{{ reg.horario_saida|time:"H:i" }}</strong>
+            </td>
             <td>{{ reg.odometro_saida|stringformat:"d" }} km</td>
             <td>
               {% if reg.horario_chegada %}
+                <div class="pf-small" style="color: var(--pf-grey-500);">{{ reg.data_chegada|date:"d/m/Y" }}</div>
                 <strong>{{ reg.horario_chegada|time:"H:i" }}</strong>
               {% else %}
                 <span class="pf-badge pf-badge-info"><i class="fas fa-road"></i> Em Trânsito</span>

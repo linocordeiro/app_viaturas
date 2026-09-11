@@ -1,7 +1,14 @@
 import io
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any
+
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
+
+if TYPE_CHECKING:
+    from fichas.models import FichaControle
+    from veiculos.models import Manutencao, Viatura
 
 # Estilos Frontline PF para Excel
 HEADER_FILL = PatternFill(start_color="111213", end_color="111213", fill_type="solid")
@@ -16,27 +23,28 @@ BOLD_FONT = Font(name="Calibri", size=10, bold=True, color="111213")
 REGULAR_FONT = Font(name="Calibri", size=10, color="41434E")
 
 THIN_BORDER = Border(
-    left=Side(style='thin', color='DADADD'),
-    right=Side(style='thin', color='DADADD'),
-    top=Side(style='thin', color='DADADD'),
-    bottom=Side(style='thin', color='DADADD')
+    left=Side(style="thin", color="DADADD"),
+    right=Side(style="thin", color="DADADD"),
+    top=Side(style="thin", color="DADADD"),
+    bottom=Side(style="thin", color="DADADD"),
 )
 
 
-def auto_ajustar_colunas(ws):
+def auto_ajustar_colunas(ws: Any) -> None:
     for col in ws.columns:
         max_len = 0
         col_letter = get_column_letter(col[0].column)
         for cell in col:
-            val = str(cell.value or '')
+            val = str(cell.value or "")
             if len(val) > max_len:
                 max_len = len(val)
         ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
 
 
-def gerar_excel_ficha(ficha):
+def gerar_excel_ficha(ficha: "FichaControle") -> bytes:
     wb = openpyxl.Workbook()
     ws = wb.active
+
     ws.title = f"Ficha {ficha.data_expediente.strftime('%d-%m-%Y')}"
 
     # Cabeçalho Institucional
@@ -52,11 +60,11 @@ def gerar_excel_ficha(ficha):
 
     # Informações do Expediente
     ws["A4"] = "Data do Expediente:"
-    ws["B4"] = ficha.data_expediente.strftime('%d/%m/%Y')
+    ws["B4"] = ficha.data_expediente.strftime("%d/%m/%Y")
     ws["C4"] = "Horário de Início:"
-    ws["D4"] = ficha.horario_inicio.strftime('%H:%M')
+    ws["D4"] = ficha.horario_inicio.strftime("%H:%M")
     ws["E4"] = "Horário de Término:"
-    ws["F4"] = ficha.horario_termino.strftime('%H:%M')
+    ws["F4"] = ficha.horario_termino.strftime("%H:%M")
 
     ws["A5"] = "Vigilante do Dia:"
     ws["B5"] = ficha.nome_vigilante
@@ -123,7 +131,7 @@ def gerar_excel_ficha(ficha):
     return buffer.getvalue()
 
 
-def gerar_excel_viaturas(viaturas):
+def gerar_excel_viaturas(viaturas: Iterable["Viatura"]) -> bytes:
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Frota de Viaturas"
@@ -152,7 +160,7 @@ def gerar_excel_viaturas(viaturas):
         if v.proxima_manutencao_km:
             proxima.append(f"{v.proxima_manutencao_km:,} km")
         if v.proxima_manutencao_data:
-            proxima.append(v.proxima_manutencao_data.strftime('%d/%m/%Y'))
+            proxima.append(v.proxima_manutencao_data.strftime("%d/%m/%Y"))
         proxima_str = " / ".join(proxima) if proxima else "Não agendada"
 
         row_data = [
@@ -184,7 +192,10 @@ def gerar_excel_viaturas(viaturas):
     return buffer.getvalue()
 
 
-def gerar_excel_manutencoes(viatura, manutencoes):
+def gerar_excel_manutencoes(
+    viatura: "Viatura",
+    manutencoes: Iterable["Manutencao"],
+) -> bytes:
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = f"Manutenções {viatura.placa}"
@@ -212,7 +223,7 @@ def gerar_excel_manutencoes(viatura, manutencoes):
     for m in manutencoes:
         total += float(m.valor_total)
         row_data = [
-            m.data_manutencao.strftime('%d/%m/%Y'),
+            m.data_manutencao.strftime("%d/%m/%Y"),
             m.get_tipo_display(),
             m.km_no_momento,
             m.fornecedor_oficina,
@@ -231,14 +242,14 @@ def gerar_excel_manutencoes(viatura, manutencoes):
             if col_idx in [1, 3]:
                 cell.alignment = Alignment(horizontal="center")
             if col_idx == 8:
-                cell.number_format = 'R$ #,##0.00'
+                cell.number_format = "R$ #,##0.00"
         current_row += 1
 
     # Linha de Total
     ws.cell(row=current_row, column=7, value="TOTAL INVESTIDO:").font = BOLD_FONT
     total_cell = ws.cell(row=current_row, column=8, value=total)
     total_cell.font = BOLD_FONT
-    total_cell.number_format = 'R$ #,##0.00'
+    total_cell.number_format = "R$ #,##0.00"
     total_cell.fill = GOLD_FILL
 
     auto_ajustar_colunas(ws)

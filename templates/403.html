@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>403 — Acesso Não Autorizado | APP_VIATURAS — Polícia Federal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'css/frontline.css' %}">
+</head>
+<body class="pf-error-page">
+
+  <div class="pf-error-card">
+    <img src="{% static 'img/brasao_pf.png' %}" alt="Brasão Polícia Federal" class="pf-error-logo">
+    <div class="pf-error-code">403</div>
+    <div class="pf-error-title">Acesso Não Autorizado</div>
+    <p class="pf-error-desc">
+      Seu perfil de usuário não possui as permissões necessárias para acessar este recurso ou módulo do sistema. Caso considere que se trata de um equívoco, solicite autorização à chefia imediata ou ao administrador setorial de viaturas.
+    </p>
+
+    <div class="pf-error-actions">
+      <a href="{% url 'dashboard:home' %}" class="pf-btn pf-btn-primary">
+        <i class="fas fa-home"></i> Retornar ao Início
+      </a>
+      <a href="mailto:suporte.ti@pf.gov.br" class="pf-btn pf-btn-secondary">
+        <i class="fas fa-headset"></i> Suporte Técnico
+      </a>
+    </div>
+  </div>
+
+</body>
+</html>

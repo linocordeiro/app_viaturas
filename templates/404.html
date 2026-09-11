@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — Página Não Encontrada | APP_VIATURAS — Polícia Federal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'css/frontline.css' %}">
+</head>
+<body class="pf-error-page">
+
+  <div class="pf-error-card">
+    <img src="{% static 'img/brasao_pf.png' %}" alt="Brasão Polícia Federal" class="pf-error-logo">
+    <div class="pf-error-code">404</div>
+    <div class="pf-error-title">Página Não Encontrada</div>
+    <p class="pf-error-desc">
+      O endereço requisitado não existe, foi movido ou o registro informado não está cadastrado na base de dados do APP_VIATURAS. Verifique o link ou utilize a navegação principal.
+    </p>
+
+    <div class="pf-error-actions">
+      <a href="{% url 'dashboard:home' %}" class="pf-btn pf-btn-primary">
+        <i class="fas fa-home"></i> Retornar ao Início
+      </a>
+      <a href="javascript:history.back()" class="pf-btn pf-btn-secondary">
+        <i class="fas fa-arrow-left"></i> Voltar à Tela Anterior
+      </a>
+    </div>
+  </div>
+
+</body>
+</html>

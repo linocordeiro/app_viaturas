@@ -83,32 +83,46 @@ body {
   min-height: 100vh;
 }
 
-/* Escala Tipográfica Frontline (sem text-uppercase em botões/headers) */
+/* Escala Tipográfica Oficial Frontline PF (sem text-uppercase em botões/headers) */
 h1, .pf-h1 {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 700;
-  line-height: 38px;
+  line-height: 40px;
   color: var(--pf-black);
 }
 
 h2, .pf-h2 {
-  font-size: 24px;
+  font-size: 30px;
   font-weight: 700;
-  line-height: 30px;
+  line-height: 36px;
   color: var(--pf-grey-700);
 }
 
 h3, .pf-h3 {
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 30px;
+  color: var(--pf-grey-700);
+}
+
+h4, .pf-h4 {
   font-size: 20px;
   font-weight: 500;
   line-height: 26px;
   color: var(--pf-grey-700);
 }
 
-h4, .pf-h4 {
+h5, .pf-h5 {
   font-size: 16px;
   font-weight: 500;
   line-height: 22px;
+  color: var(--pf-grey-700);
+}
+
+h6, .pf-h6 {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
   color: var(--pf-grey-700);
 }
 
@@ -122,6 +136,13 @@ small, .pf-small {
   font-size: 12px;
   line-height: 16px;
   color: var(--pf-grey-600);
+}
+
+.pf-footer-version {
+  font-size: 10px;
+  line-height: 12px;
+  letter-spacing: 0.100em;
+  color: var(--pf-grey-400);
 }
 
 /* ==========================================================================
@@ -287,8 +308,9 @@ small, .pf-small {
 }
 
 .pf-menu-section-title {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
   letter-spacing: 0.125em;
   color: var(--pf-gold-500);
   padding: var(--space-8) var(--space-24);
@@ -451,8 +473,8 @@ small, .pf-small {
 }
 
 .pf-btn-lg {
-  height: 40px;
-  padding: 0 var(--space-24);
+  height: 32px;
+  padding: 0 var(--space-20, 20px);
   font-size: 14px;
 }
 
@@ -789,4 +811,64 @@ small, .pf-small {
   .col-8, .col-6, .col-4, .col-3 {
     grid-column: span 12;
   }
+}
+
+/* Componente de Página de Erro Frontline PF (PfErrorPageComponent) */
+.pf-error-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--pf-bg-page);
+  padding: var(--space-24);
+}
+
+.pf-error-card {
+  max-width: 580px;
+  width: 100%;
+  background: #FFFFFF;
+  border-radius: 8px;
+  border: 1px solid var(--pf-grey-200);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  padding: var(--space-40) var(--space-32);
+  border-top: 4px solid var(--pf-gold-500);
+}
+
+.pf-error-logo {
+  height: 64px;
+  width: auto;
+  margin-bottom: var(--space-16);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+
+.pf-error-code {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--pf-black);
+  margin-bottom: var(--space-8);
+  letter-spacing: -1px;
+}
+
+.pf-error-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--pf-grey-700);
+  margin-bottom: var(--space-12, 12px);
+}
+
+.pf-error-desc {
+  font-size: 14px;
+  color: var(--pf-grey-600);
+  line-height: 20px;
+  margin-bottom: var(--space-24);
+}
+
+.pf-error-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-16);
+  flex-wrap: wrap;
 }

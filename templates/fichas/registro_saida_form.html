@@ -53,7 +53,7 @@
         </div>
       </div>
 
-      <div class="col-6">
+      <div class="col-12">
         <div class="pf-field">
           <label for="{{ form.destino.id_for_label }}" class="required">{{ form.destino.label }}</label>
           {{ form.destino }}
@@ -61,7 +61,15 @@
         </div>
       </div>
 
-      <div class="col-3">
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.data_saida.id_for_label }}" class="required">{{ form.data_saida.label }}</label>
+          {{ form.data_saida }}
+          {% if form.data_saida.errors %}<div class="pf-error-text">{{ form.data_saida.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
         <div class="pf-field">
           <label for="{{ form.horario_saida.id_for_label }}" class="required">{{ form.horario_saida.label }}</label>
           {{ form.horario_saida }}
@@ -69,7 +77,7 @@
         </div>
       </div>
 
-      <div class="col-3">
+      <div class="col-4">
         <div class="pf-field">
           <label for="{{ form.odometro_saida.id_for_label }}" class="required">{{ form.odometro_saida.label }}</label>
           {{ form.odometro_saida }}
