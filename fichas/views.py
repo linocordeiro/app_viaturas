@@ -52,20 +52,37 @@ def ficha_lista(request):
 @requer_permissao("operacao_diaria.fichas.criar")
 def ficha_hoje(request):
     """
-    Atalho inteligente: se a ficha de hoje existir, vai para ela; se não existir, cria automaticamente.
+    Atalho inteligente: vai para a ficha do turno atual.
     """
+    from datetime import time
+    
     hoje = date.today()
-    ficha = FichaControle.objects.filter(data_expediente=hoje).first()
+    hora_atual = timezone.localtime().time()
+    
+    if hora_atual >= time(19, 0) or hora_atual < time(7, 0):
+        h_inicio = time(19, 0)
+        h_termino = time(7, 0)
+        # Se for madrugada (antes das 7h), a ficha pertence à data de ontem
+        if hora_atual < time(7, 0):
+            from datetime import timedelta
+            hoje = hoje - timedelta(days=1)
+    else:
+        h_inicio = time(7, 0)
+        h_termino = time(19, 0)
+
+    ficha = FichaControle.objects.filter(data_expediente=hoje, horario_inicio=h_inicio).first()
 
     if not ficha:
         nome_vigilante = request.user.get_full_name() or request.user.username
         ficha = FichaControle.objects.create(
             data_expediente=hoje,
+            horario_inicio=h_inicio,
+            horario_termino=h_termino,
             vigilante=request.user,
             nome_vigilante=nome_vigilante,
             status=FichaControle.STATUS_ABERTA
         )
-        messages.success(request, f"Ficha Diária de Controle aberta com sucesso para a data de hoje ({hoje.strftime('%d/%m/%Y')}).")
+        messages.success(request, f"Ficha do turno ({h_inicio.strftime('%H:%M')} às {h_termino.strftime('%H:%M')}) aberta com sucesso.")
 
     return redirect("fichas:detalhe", pk=ficha.pk)
 
@@ -153,9 +170,13 @@ def registro_saida_criar(request, ficha_pk):
                 initial["odometro_saida"] = viatura.km_atual
         form = RegistroSaidaForm(initial=initial)
 
+    import json
+    odometros_map = {str(v.pk): v.km_atual for v in form.fields["viatura"].queryset}
+
     return render(request, "fichas/registro_saida_form.html", {
         "form": form,
         "ficha": ficha,
+        "odometros_map": json.dumps(odometros_map),
     })
 
 
@@ -163,10 +184,6 @@ def registro_saida_criar(request, ficha_pk):
 def registro_chegada_concluir(request, pk):
     registro = get_object_or_404(RegistroUso.objects.select_related("ficha", "viatura"), pk=pk)
     ficha = registro.ficha
-
-    if not ficha.pode_editar:
-        messages.error(request, "A ficha do dia está encerrada. Não é permitido alterar o registro.")
-        return redirect("fichas:detalhe", pk=ficha.pk)
 
     if request.method == "POST":
         form = RegistroChegadaForm(request.POST, instance=registro)
@@ -187,28 +204,41 @@ def registro_chegada_concluir(request, pk):
     })
 
 
+def is_ficha_turno_atual(ficha):
+    from datetime import date, time, timedelta
+    from django.utils import timezone
+    hora_atual = timezone.localtime().time()
+    hoje = date.today()
+    if hora_atual >= time(19, 0) or hora_atual < time(7, 0):
+        h_inicio = time(19, 0)
+        if hora_atual < time(7, 0):
+            hoje = hoje - timedelta(days=1)
+    else:
+        h_inicio = time(7, 0)
+    return ficha.data_expediente == hoje and ficha.horario_inicio == h_inicio
+
+
 @requer_permissao("operacao_diaria.fichas.editar_registro")
 def registro_editar(request, pk):
     registro = get_object_or_404(RegistroUso.objects.select_related("ficha", "viatura"), pk=pk)
     ficha = registro.ficha
 
-    if not ficha.pode_editar:
-        messages.error(request, "A ficha está encerrada e não pode ser editada.")
-        return redirect("fichas:detalhe", pk=ficha.pk)
+    bloquear_saida = (not ficha.pode_editar) or not is_ficha_turno_atual(ficha)
 
     if request.method == "POST":
-        form = RegistroEdicaoForm(request.POST, instance=registro)
+        form = RegistroEdicaoForm(request.POST, instance=registro, bloquear_saida=bloquear_saida)
         if form.is_valid():
             reg = form.save()
             messages.success(request, f"Registro de uso da viatura {reg.viatura.placa} atualizado com sucesso.")
             return redirect("fichas:detalhe", pk=ficha.pk)
     else:
-        form = RegistroEdicaoForm(instance=registro)
+        form = RegistroEdicaoForm(instance=registro, bloquear_saida=bloquear_saida)
 
     return render(request, "fichas/registro_editar_form.html", {
         "form": form,
         "registro": registro,
         "ficha": ficha,
+        "bloquear_saida": bloquear_saida,
     })
 
 
@@ -243,12 +273,6 @@ def ficha_encerrar(request, pk):
     ficha = get_object_or_404(FichaControle, pk=pk)
 
     if request.method == "POST":
-        # Verifica se há viaturas em trânsito ainda não retornadas
-        em_aberto = ficha.registros.filter(status=RegistroUso.STATUS_EM_TRANSITO).count()
-        if em_aberto > 0:
-            messages.warning(request, f"Atenção: Existem {em_aberto} viatura(s) ainda em trânsito. Registre o retorno ou cancele as saídas antes de encerrar o expediente.")
-            return redirect("fichas:detalhe", pk=ficha.pk)
-
         ficha.encerrar_ficha(request.user)
         messages.success(request, f"Ficha Diária de {ficha.data_expediente.strftime('%d/%m/%Y')} ENCERRADA com sucesso. O documento está bloqueado para edições.")
         return redirect("fichas:detalhe", pk=ficha.pk)

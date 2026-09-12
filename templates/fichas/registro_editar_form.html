@@ -12,6 +12,15 @@
 {% endblock %}
 
 {% block content %}
+<style>
+  input:disabled, select:disabled, textarea:disabled {
+    background-color: #f5f5f5 !important;
+    color: #888 !important;
+    cursor: not-allowed !important;
+    border: 1px dashed #ccc !important;
+    opacity: 0.8;
+  }
+</style>
 <div class="pf-page-header">
   <div>
     <h2>
@@ -56,6 +65,13 @@
         <i class="fas fa-sign-out-alt" style="color: var(--pf-blue-500);"></i> 1. Dados de Saída do Veículo
       </div>
     </div>
+
+    {% if bloquear_saida %}
+      <div style="background-color: #f8f9fa; border-left: 4px solid #6c757d; padding: 12px; margin-bottom: 16px; border-radius: 4px; color: #495057; font-size: 14px;">
+        <i class="fas fa-lock" style="color: #6c757d; margin-right: 8px;"></i>
+        <strong>Campos Protegidos:</strong> Os dados de saída não podem ser alterados pois pertencem a uma ficha ou turno anterior.
+      </div>
+    {% endif %}
 
     <div class="pf-form-grid">
       <div class="col-6">

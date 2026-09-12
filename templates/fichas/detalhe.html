@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load permissoes %}
 {% block title %}Ficha Diária — {{ ficha.data_expediente|date:"d/m/Y" }}{% endblock %}
 
 {% block breadcrumb %}
@@ -16,23 +16,59 @@
     <p>Expediente de <strong>{{ ficha.data_expediente|date:"d/m/Y" }}</strong> • Horário: {{ ficha.horario_inicio|time:"H:i" }} às {{ ficha.horario_termino|time:"H:i" }}</p>
   </div>
   <div style="display: flex; gap: var(--space-8); flex-wrap: wrap;">
+    {% tem_perm "operacao_diaria.fichas.exportar_pdf" as pode_pdf %}
+    {% if pode_pdf %}
     <a href="{% url 'fichas:exportar_pdf' ficha.pk %}" class="pf-btn pf-btn-secondary" title="Exportar Ficha Oficial em PDF">
       <i class="fas fa-file-pdf" style="color: var(--pf-red-500);"></i> Imprimir PDF Oficial
     </a>
+    {% endif %}
+
+    {% tem_perm "operacao_diaria.fichas.exportar_excel" as pode_excel %}
+    {% if pode_excel %}
     <a href="{% url 'fichas:exportar_excel' ficha.pk %}" class="pf-btn pf-btn-secondary" title="Exportar Planilha Excel">
       <i class="fas fa-file-excel" style="color: var(--pf-green-500);"></i> Planilha Excel
     </a>
+    {% endif %}
 
     {% if ficha.pode_editar %}
       <a href="{% url 'fichas:saida_criar' ficha.pk %}" class="pf-btn pf-btn-gold">
         <i class="fas fa-key"></i> Registrar Saída de Viatura
       </a>
-      <form method="post" action="{% url 'fichas:encerrar' ficha.pk %}" class="form-encerrar-ficha" style="display: inline;">
-        {% csrf_token %}
-        <button type="submit" class="pf-btn pf-btn-danger">
+      
+      {% tem_perm "operacao_diaria.fichas.encerrar" as pode_encerrar %}
+      {% if pode_encerrar %}
+        <button type="button" class="pf-btn pf-btn-danger" onclick="document.getElementById('modalEncerrar').showModal()">
           <i class="fas fa-lock"></i> Encerrar Ficha
         </button>
-      </form>
+
+        <style>
+          #modalEncerrar::backdrop {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(2px);
+          }
+        </style>
+        <dialog id="modalEncerrar" style="border: none; border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.2); padding: 24px; width: 90%; max-width: 500px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0;">
+          <h3 style="margin-top: 0; color: var(--pf-red-600);"><i class="fas fa-exclamation-triangle"></i> Encerrar Ficha</h3>
+          <p>Você está prestes a encerrar a ficha atual.</p>
+          {% if em_transito > 0 %}
+            <div style="background-color: #FFF3CD; color: #856404; padding: 12px; border-radius: 4px; margin-top: 16px; border-left: 4px solid #FFEBA8;">
+              <strong>Atenção:</strong> Existem {{ em_transito }} viatura(s) ainda em trânsito (na rua).<br><br>
+              Ao encerrar a ficha, constará apenas a saída dessas viaturas. O retorno da viatura deverá ser lançado na próxima ficha.
+            </div>
+          {% else %}
+            <p>Todas as viaturas estão no pátio. Confirma o encerramento?</p>
+          {% endif %}
+          <div style="display: flex; gap: 16px; margin-top: 24px; justify-content: flex-end;">
+            <button type="button" class="pf-btn pf-btn-secondary" onclick="document.getElementById('modalEncerrar').close()">Cancelar</button>
+            <form method="post" action="{% url 'fichas:encerrar' ficha.pk %}" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit" class="pf-btn pf-btn-danger">
+                <i class="fas fa-lock"></i> Confirmar Encerramento
+              </button>
+            </form>
+          </div>
+        </dialog>
+      {% endif %}
     {% else %}
       <span class="pf-btn pf-btn-secondary" style="cursor: default; opacity: 0.85;">
         <i class="fas fa-lock"></i> Ficha Encerrada (Leitura)

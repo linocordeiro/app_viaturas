@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -8,7 +8,7 @@ from accesscontrol.decorators import requer_permissao
 from accesscontrol.models import LogAcesso, Perfil, UsuarioPerfil
 from accesscontrol.services import invalidar_cache
 
-from .forms import LoginForm, UsuarioForm
+from .forms import LoginForm, MeuPerfilForm, MeuPerfilSenhaForm, UsuarioForm
 from .models import Usuario
 
 
@@ -182,10 +182,34 @@ def usuario_perfis_gerenciar(request, pk):
 
 @login_required
 def meu_perfil(request):
-    """Exibe os perfis e permissões do próprio usuário logado."""
+    """Permite ao usuário editar seus próprios dados e senha."""
+    if request.method == "POST":
+        if "btn_dados" in request.POST:
+            form_dados = MeuPerfilForm(request.POST, instance=request.user)
+            form_senha = MeuPerfilSenhaForm(request.user)
+            if form_dados.is_valid():
+                form_dados.save()
+                messages.success(request, "Seus dados foram atualizados com sucesso.")
+                return redirect("usuarios:meu_perfil")
+        elif "btn_senha" in request.POST:
+            form_dados = MeuPerfilForm(instance=request.user)
+            form_senha = MeuPerfilSenhaForm(request.user, request.POST)
+            if form_senha.is_valid():
+                user = form_senha.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, "Sua senha foi alterada com sucesso.")
+                return redirect("usuarios:meu_perfil")
+    else:
+        form_dados = MeuPerfilForm(instance=request.user)
+        form_senha = MeuPerfilSenhaForm(request.user)
+
+    # Buscar perfis para exibição simples (se desejado) ou podemos apenas passar
     vinculos = UsuarioPerfil.objects.filter(
         usuario=request.user, ativo=True
-    ).select_related("perfil").prefetch_related("perfil__acoes")
+    ).select_related("perfil")
+
     return render(request, "usuarios/meu_perfil.html", {
+        "form_dados": form_dados,
+        "form_senha": form_senha,
         "vinculos": vinculos,
     })

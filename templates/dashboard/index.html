@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load permissoes %}
 {% block title %}Dashboard Operacional{% endblock %}
 
 {% block breadcrumb %}
@@ -17,14 +17,18 @@
     <a href="{% url 'fichas:hoje' %}" class="pf-btn pf-btn-gold">
       <i class="fas fa-clipboard-check"></i> Acessar Ficha do Dia
     </a>
+    {% tem_perm 'frota.viaturas.visualizar' as pode_ver_frota %}
+    {% if pode_ver_frota %}
     <a href="{% url 'veiculos:lista' %}" class="pf-btn pf-btn-secondary">
       <i class="fas fa-car"></i> Ver Todas as Viaturas
     </a>
+    {% endif %}
   </div>
 </div>
 
 <!-- 1. KPI Cards de Destaque -->
 <div class="pf-kpi-grid">
+  {% if 'viaturas_em_transito' in meus_widgets %}
   <div class="pf-kpi-card kpi-gold">
     <div class="pf-kpi-info">
       <span class="pf-kpi-title">VIATURAS NA RUA / TRÂNSITO</span>
@@ -32,7 +36,9 @@
     </div>
     <i class="fas fa-road pf-kpi-icon" style="color: var(--pf-gold-500);"></i>
   </div>
+  {% endif %}
 
+  {% if 'metricas_frota' in meus_widgets %}
   <div class="pf-kpi-card kpi-success">
     <div class="pf-kpi-info">
       <span class="pf-kpi-title">DISPONÍVEIS NO PÁTIO</span>
@@ -56,9 +62,11 @@
     </div>
     <i class="fas fa-shield-alt pf-kpi-icon"></i>
   </div>
+  {% endif %}
 </div>
 
 <!-- 2. Status da Ficha Diária de Hoje -->
+{% if 'ficha_hoje' in meus_widgets %}
 <div class="pf-card" style="border-left: 4px solid var(--pf-gold-500);">
   <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-16);">
     <div>
@@ -103,8 +111,10 @@
     </div>
   </div>
 </div>
+{% endif %}
 
 <!-- 3. Viaturas com Saída Aberta (Em Trânsito na Rua) -->
+{% if 'viaturas_em_transito' in meus_widgets %}
 <div class="pf-card">
   <div class="pf-card-header">
     <div class="pf-card-title">
@@ -166,10 +176,13 @@
     </table>
   </div>
 </div>
+{% endif %}
 
 <!-- 4. Gráficos Operacionais (KM Rodados e Disponibilidade) -->
+{% if 'grafico_km_7dias' in meus_widgets or 'metricas_frota' in meus_widgets %}
 <div class="pf-form-grid" style="margin-bottom: var(--space-24);">
   <!-- Gráfico de Histórico de KM Rodados -->
+  {% if 'grafico_km_7dias' in meus_widgets %}
   <div class="col-8">
     <div class="pf-card" style="height: 100%;">
       <div class="pf-card-header">
@@ -182,8 +195,10 @@
       </div>
     </div>
   </div>
+  {% endif %}
 
   <!-- Gráfico de Disponibilidade da Frota -->
+  {% if 'metricas_frota' in meus_widgets %}
   <div class="col-4">
     <div class="pf-card" style="height: 100%;">
       <div class="pf-card-header">
@@ -210,10 +225,12 @@
       </div>
     </div>
   </div>
+  {% endif %}
 </div>
+{% endif %}
 
 <!-- 5. Alertas de Manutenção Preventiva Urgentes -->
-{% if viaturas_alerta %}
+{% if viaturas_alerta and 'alertas_manutencao' in meus_widgets %}
   <div class="pf-card">
     <div class="pf-card-header">
       <div class="pf-card-title" style="color: var(--pf-red-700);">

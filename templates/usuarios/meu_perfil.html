@@ -10,55 +10,93 @@
 {% block content %}
 <div class="pf-page-header">
   <div>
-    <h2><i class="fas fa-id-badge"></i> Meu Perfil de Acesso</h2>
-    <p>Perfis e permissões atribuídas ao seu usuário</p>
+    <h2><i class="fas fa-id-badge"></i> Meu Perfil: {{ request.user.get_full_name|default:request.user.username }}</h2>
+    <p>Atualize seus dados pessoais e gerencie sua senha de acesso.</p>
   </div>
 </div>
 
-{% for vp in vinculos %}
-<div class="pf-card" style="margin-bottom: var(--space-16);">
-  <div class="pf-card-header">
-    <h3>
-      <span class="pf-badge pf-badge-info" style="font-size: 1rem; padding: 4px 12px;">
-        <i class="fas fa-user-shield"></i> {{ vp.perfil.nome|title }}
-      </span>
-    </h3>
-    <small>{{ vp.perfil.descricao }}</small>
-  </div>
-  <div class="pf-table-wrapper">
-    <table class="pf-table">
-      <thead>
-        <tr>
-          <th>Ação Permitida</th>
-          <th>Módulo</th>
-          <th>Tipo</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for acao in vp.perfil.acoes.all %}
-        <tr>
-          <td><code>{{ acao.codigo_completo }}</code></td>
-          <td>{{ acao.nome }}</td>
-          <td>
-            {% if acao.tipo == 'tela' %}
-              <span class="pf-badge pf-badge-info">Tela</span>
-            {% elif acao.tipo == 'acao' %}
-              <span class="pf-badge pf-badge-success">Ação</span>
-            {% else %}
-              <span class="pf-badge pf-badge-warning">Dado</span>
-            {% endif %}
-          </td>
-        </tr>
+<div class="pf-form-grid">
+  <!-- Meus Dados Pessoais -->
+  <div class="col-6">
+    <div class="pf-card">
+      <div class="pf-card-header">
+        <h3><i class="fas fa-user-edit"></i> Meus Dados Pessoais</h3>
+      </div>
+      <form method="post" action="{% url 'usuarios:meu_perfil' %}">
+        {% csrf_token %}
+        <div style="padding: var(--space-16);">
+          {% for field in form_dados %}
+            <div class="pf-field">
+              {{ field.label_tag }}
+              {{ field }}
+              {% if field.help_text %}
+                <small class="pf-help-text">{{ field.help_text }}</small>
+              {% endif %}
+              {% if field.errors %}
+                <div class="pf-error-text">{{ field.errors|join:", " }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        <div style="padding: var(--space-16); border-top: 1px solid var(--pf-grey-200);">
+          <button type="submit" name="btn_dados" class="pf-btn pf-btn-primary">
+            <i class="fas fa-save"></i> Salvar Dados
+          </button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Informações de Perfil (Apenas Visualização) -->
+    <div class="pf-card" style="margin-top: var(--space-16);">
+      <div class="pf-card-header">
+        <h3><i class="fas fa-shield-alt"></i> Meus Perfis de Acesso</h3>
+      </div>
+      <div style="padding: var(--space-16);">
+        {% for vp in vinculos %}
+          <div style="margin-bottom: var(--space-8);">
+            <span class="pf-badge pf-badge-info" style="font-size: 1rem; padding: 4px 12px;">
+              <i class="fas fa-user-shield"></i> {{ vp.perfil.nome|title }}
+            </span>
+            <div style="margin-top: 4px; color: var(--pf-grey-600); font-size: 0.9rem;">
+              {{ vp.perfil.descricao }}
+            </div>
+          </div>
+        {% empty %}
+          <p style="color: var(--pf-grey-600);">Você não possui nenhum perfil associado no momento.</p>
         {% endfor %}
-      </tbody>
-    </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alterar Senha -->
+  <div class="col-6">
+    <div class="pf-card">
+      <div class="pf-card-header">
+        <h3><i class="fas fa-key"></i> Alterar Senha</h3>
+      </div>
+      <form method="post" action="{% url 'usuarios:meu_perfil' %}">
+        {% csrf_token %}
+        <div style="padding: var(--space-16);">
+          {% for field in form_senha %}
+            <div class="pf-field">
+              {{ field.label_tag }}
+              {{ field }}
+              {% if field.help_text %}
+                <small class="pf-help-text">{{ field.help_text }}</small>
+              {% endif %}
+              {% if field.errors %}
+                <div class="pf-error-text">{{ field.errors|join:", " }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        <div style="padding: var(--space-16); border-top: 1px solid var(--pf-grey-200);">
+          <button type="submit" name="btn_senha" class="pf-btn pf-btn-secondary">
+            <i class="fas fa-lock"></i> Atualizar Senha
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
-{% empty %}
-<div class="pf-card" style="text-align: center; padding: var(--space-32);">
-  <i class="fas fa-user-slash" style="font-size: 40px; color: var(--pf-grey-400);"></i>
-  <p style="margin-top: var(--space-16);">Nenhum perfil de acesso atribuído ao seu usuário.</p>
-  <p>Entre em contato com o administrador do sistema.</p>
-</div>
-{% endfor %}
 {% endblock %}

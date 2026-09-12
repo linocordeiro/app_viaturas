@@ -25,6 +25,21 @@
 
 ## Histórico de Commits
 
+### Funcionalidades de Gestão de Turnos · 12/09/2026
+
+**Tipo:** `feat` — Gestão de Turnos, Modal e Melhorias na UI  
+**Branch:** `develop`
+
+**Descrição:**
+- Implementação de Modal para encerramento de ficha com alerta de viaturas pendentes;
+- Remoção da restrição `unique=True` do campo `data_expediente` (permitindo turno Dia e Noite na mesma data);
+- Lógica de auto-identificação de turno (07h às 19h e 19h às 07h) ao abrir Ficha Diária;
+- Bloqueio seletivo (read-only) dos dados de saída ao editar registros de viaturas em turnos diferentes;
+- Auto-preenchimento via JS do odômetro da viatura na tela de saída.
+
+---
+
+
 ### `[v0]` — Commit `5e0bf2d` · 06/09/2026 14:19
 
 **Tipo:** `chore` — Inicialização do repositório  

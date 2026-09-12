@@ -94,4 +94,28 @@
     </div>
   </form>
 </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var odometros = {{ odometros_map|safe }};
+    var selectViatura = document.getElementById("{{ form.viatura.id_for_label }}");
+    var inputOdometro = document.getElementById("{{ form.odometro_saida.id_for_label }}");
+    
+    if (selectViatura && inputOdometro) {
+      selectViatura.addEventListener("change", function() {
+        var viaturaId = this.value;
+        if (viaturaId && odometros[viaturaId] !== undefined) {
+          inputOdometro.value = odometros[viaturaId];
+        } else {
+          inputOdometro.value = "";
+        }
+      });
+      
+      // Auto-preencher caso a viatura já venha selecionada
+      if (selectViatura.value && !inputOdometro.value) {
+        inputOdometro.value = odometros[selectViatura.value] || "";
+      }
+    }
+  });
+</script>
 {% endblock %}

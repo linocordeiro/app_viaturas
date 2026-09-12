@@ -7,11 +7,13 @@ from django.shortcuts import render
 
 from fichas.models import FichaControle, RegistroUso
 from veiculos.models import Viatura
+from accesscontrol.services import obter_widgets_dashboard
 
 
 @login_required
 def home(request):
     hoje = date.today()
+    meus_widgets = obter_widgets_dashboard(request.user)
 
     # Ficha de hoje
     ficha_hoje = FichaControle.objects.filter(data_expediente=hoje).first()
@@ -89,4 +91,5 @@ def home(request):
         "dias_grafico": dias_grafico,
         "km_grafico": km_grafico,
         "total_saidas_mes": total_saidas_mes,
+        "meus_widgets": meus_widgets,
     })

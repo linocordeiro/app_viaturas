@@ -19,19 +19,23 @@ class FichaControleForm(forms.ModelForm):
             "observacoes": forms.Textarea(attrs={"class": "pf-textarea", "rows": 2, "placeholder": "Observações do plantão / expediente..."}),
         }
 
-    def clean_data_expediente(self):
-        data_exp = self.cleaned_data.get("data_expediente")
-        # Verifica se já existe outra ficha para este dia
-        qs = FichaControle.objects.filter(data_expediente=data_exp)
-        if self.instance.pk:
-            qs = qs.exclude(pk=self.instance.pk)
-        if qs.exists():
-            msg = (
-                f"Já existe uma Ficha de Controle cadastrada para a data "
-                f"{data_exp.strftime('%d/%m/%Y')}. Não é permitido duplicar fichas no mesmo dia."
-            )
-            raise forms.ValidationError(msg)
-        return data_exp
+    def clean(self):
+        cleaned_data = super().clean()
+        data_exp = cleaned_data.get("data_expediente")
+        h_inicio = cleaned_data.get("horario_inicio")
+
+        if data_exp and h_inicio:
+            # Verifica se já existe ficha para a mesma data e mesmo turno/horário de início
+            qs = FichaControle.objects.filter(data_expediente=data_exp, horario_inicio=h_inicio)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                msg = (
+                    f"Já existe uma Ficha de Controle cadastrada para a data "
+                    f"{data_exp.strftime('%d/%m/%Y')} no horário de {h_inicio.strftime('%H:%M')}."
+                )
+                self.add_error("horario_inicio", msg)
+        return cleaned_data
 
 
 class RegistroSaidaForm(forms.ModelForm):
@@ -130,7 +134,7 @@ class RegistroEdicaoForm(forms.ModelForm):
             "status": forms.Select(attrs={"class": "pf-select"}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, bloquear_saida=False, **kwargs):
         super().__init__(*args, **kwargs)
         # Permite selecionar qualquer viatura ativa no pátio
         self.fields["viatura"].queryset = Viatura.objects.filter(ativo=True)
@@ -139,6 +143,11 @@ class RegistroEdicaoForm(forms.ModelForm):
         self.fields["horario_chegada"].required = False
         self.fields["odometro_chegada"].required = False
         self.fields["avarias_encontradas"].required = False
+
+        if bloquear_saida:
+            campos_saida = ["viatura", "condutor", "destino", "data_saida", "horario_saida", "odometro_saida"]
+            for c in campos_saida:
+                self.fields[c].disabled = True
 
         if self.instance.data_saida and hasattr(self.instance.data_saida, "strftime"):
             self.initial["data_saida"] = self.instance.data_saida.strftime("%Y-%m-%d")

@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.password_validation import validate_password
 
 from .models import Usuario
@@ -116,3 +116,22 @@ class UsuarioForm(forms.ModelForm):
                 )
         except Exception:
             pass
+
+
+class MeuPerfilForm(forms.ModelForm):
+    class Meta:
+        model = Usuario
+        fields = ["first_name", "last_name", "email", "telefone"]
+        widgets = {
+            "first_name": forms.TextInput(attrs={"class": "pf-input"}),
+            "last_name": forms.TextInput(attrs={"class": "pf-input"}),
+            "email": forms.EmailInput(attrs={"class": "pf-input"}),
+            "telefone": forms.TextInput(attrs={"class": "pf-input", "placeholder": "Ex: (61) 2024-8000"}),
+        }
+
+
+class MeuPerfilSenhaForm(PasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({"class": "pf-input"})

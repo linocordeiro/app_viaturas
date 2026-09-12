@@ -24,9 +24,8 @@ class FichaControle(models.Model):
 
     data_expediente = models.DateField(
         "Data do Expediente",
-        unique=True,
         default=date.today,
-        help_text="Data correspondente ao expediente de controle das viaturas (única por dia)"
+        help_text="Data correspondente ao expediente de controle das viaturas"
     )
     horario_inicio = models.TimeField(
         "Horário de Início do Expediente",
