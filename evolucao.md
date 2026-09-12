@@ -265,18 +265,60 @@ Padronização do histórico de commits do projeto em idioma português, alinhan
 
 ---
 
+### `[v1.3]` — Commit `d769b3d` · 12/09/2026 16:12
+
+**Tipo:** `feat(accesscontrol)` — Implementação de Sistema RBAC  
+**Branch:** `develop`  
+**Co-autor:** Claude (Anthropic)
+
+**Descrição:**
+Implementação do sistema de Controle de Acesso Baseado em Papéis (RBAC - Role-Based Access Control) granular, substituindo o campo legado de perfil. A arquitetura foi desenvolvida para permitir o controle minucioso do acesso a módulos, submódulos e ações, vinculados a perfis, suportando múltiplos perfis por usuário com auditoria.
+
+**Mudanças principais:**
+
+#### 🔒 App `accesscontrol` (Novo)
+- `models.py` — Criação dos modelos `Modulo`, `Submodulo`, `Acao` (com código desnormalizado), `Perfil`, `UsuarioPerfil` (through table com auditoria), `DashboardWidget` e `LogAcesso`.
+- `services.py` — Serviço de permissões (`obter_codigos_permissao`, `tem_permissao`) com cache via `LocMemCache` (15 minutos).
+- `signals.py` — Invalidação automática do cache via signals `post_save`, `post_delete` e `m2m_changed`.
+- `middleware.py` — `PermissaoMiddleware` para bloqueio transparente lendo atributos das views e registro de acessos negados no `LogAcesso`.
+- `decorators.py` — Decorador `@requer_permissao` para function-based views.
+- `templatetags/permissoes.py` — Tag customizada `{% tem_perm "codigo" as var %}` para ocultar elementos visuais (botões, menus).
+- `context_processors.py` — Injeção de `modulos_menu`, `codigos_permissao` e `widgets_dashboard` globais.
+- `migrations/seeders.py` — Constantes para popular a base.
+- `migrations/0002_seed_perfis.py` — Migration para popular 3 módulos, 24 ações, 5 perfis padronizados (vigilante, nutran, inteligencia, chefia, administrador) e migrar usuários legados de forma idempotente.
+- `management/commands/setup_permissoes.py` — Comando CLI para reconstruir e resetar a estrutura de permissões no banco de dados sem efeitos colaterais.
+
+#### 👤 App `usuarios`
+- `models.py` — Remoção do antigo campo estático `perfil` e adição dos métodos `tem_permissao()` e `listar_perfis()`.
+- `views.py` — Proteção de todas as views com RBAC, criação da nova tela de atribuição de perfis por usuário (`usuario_perfis_gerenciar`) com auditoria de atribuição/remoção e a tela do usuário `meu_perfil`.
+- `migrations/0002_remove_perfil_field.py` — Remoção do campo CharField `perfil`.
+
+#### 🚗 Apps `veiculos` e `fichas`
+- `views.py` — Substituição do decorador padrão `@login_required` para o decorador `@requer_permissao` com códigos de permissão granulares em todas as views.
+
+#### 🎨 Frontend / Templates
+- `templates/base.html` — Menu lateral adaptado para ser gerado dinamicamente validando as permissões do usuário.
+- `templates/usuarios/lista.html` — Listagem de usuários adaptada para mostrar a lista de perfis do usuário ao invés do perfil legado único. Botões de ação ocultados usando template tag condicionais `{% tem_perm %}`.
+- Novos templates: `templates/usuarios/perfis.html` (para gerenciamento das atribuições de perfil por admin) e `templates/usuarios/meu_perfil.html`.
+
+**Estatísticas:**
+- **34 arquivos** modificados/criados
+- **2.568 linhas** adicionadas / **96 linhas** removidas
+
+---
+
 ## Resumo Estatístico Geral
 
 | Métrica | Valor |
 |---|---|
-| **Total de commits** | 7 |
-| **Período de desenvolvimento** | 06/09/2026 a 10/09/2026 (5 dias) |
-| **Total de arquivos criados/modificados** | 150+ |
-| **Total de linhas adicionadas** | ~10.300+ |
-| **Módulos Django** | 5 (core, veiculos, fichas, usuarios, dashboard) |
+| **Total de commits** | 8 |
+| **Período de desenvolvimento** | 06/09/2026 a 12/09/2026 (7 dias) |
+| **Total de arquivos criados/modificados** | 180+ |
+| **Total de linhas adicionadas** | ~12.800+ |
+| **Módulos Django** | 6 (core, veiculos, fichas, usuarios, dashboard, accesscontrol) |
 | **Apps de serviço** | 1 (services/) |
-| **Templates HTML** | 17+ |
-| **Migrations** | 7 |
+| **Templates HTML** | 19+ |
+| **Migrations** | 10 |
 | **Branches utilizadas** | main, develop, ft_review, ft_perfil |
 
 ---
@@ -286,6 +328,7 @@ Padronização do histórico de commits do projeto em idioma português, alinhan
 ```
 app_viaturas/
 ├── core/               # Configurações e roteamento principal
+├── accesscontrol/      # Infraestrutura RBAC (papéis e permissões)
 ├── veiculos/           # Gestão de viaturas e manutenções
 ├── fichas/             # Registro de saída e chegada de viaturas
 ├── usuarios/           # Autenticação e gestão de usuários
