@@ -4,6 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 
+from accesscontrol.decorators import requer_permissao
+from accesscontrol.models import LogAcesso, Perfil, UsuarioPerfil
+from accesscontrol.services import invalidar_cache
+
 from .forms import LoginForm, UsuarioForm
 from .models import Usuario
 
@@ -30,7 +34,6 @@ def login_view(request):
     else:
         form = LoginForm()
 
-
     return render(request, "usuarios/login.html", {"form": form})
 
 
@@ -40,10 +43,10 @@ def logout_view(request):
     return redirect("usuarios:login")
 
 
-@login_required
+@requer_permissao("usuarios.cadastro.visualizar")
 def usuario_lista(request):
     termo = request.GET.get("q", "").strip()
-    usuarios = Usuario.objects.all()
+    usuarios = Usuario.objects.prefetch_related("perfis_atribuidos__perfil").all()
 
     if termo:
         usuarios = usuarios.filter(
@@ -64,12 +67,16 @@ def usuario_lista(request):
     })
 
 
-@login_required
+@requer_permissao("usuarios.cadastro.criar")
 def usuario_criar(request):
     if request.method == "POST":
         form = UsuarioForm(request.POST)
         if form.is_valid():
             user = form.save()
+            # Registra quem atribuiu os perfis
+            for up in UsuarioPerfil.objects.filter(usuario=user):
+                up.atribuido_por = request.user
+                up.save(update_fields=["atribuido_por"])
             messages.success(request, f"Usuário {user.username} cadastrado com sucesso.")
             return redirect("usuarios:lista")
     else:
@@ -81,7 +88,7 @@ def usuario_criar(request):
     })
 
 
-@login_required
+@requer_permissao("usuarios.cadastro.editar")
 def usuario_editar(request, pk):
     usuario = get_object_or_404(Usuario, pk=pk)
 
@@ -89,6 +96,7 @@ def usuario_editar(request, pk):
         form = UsuarioForm(request.POST, instance=usuario)
         if form.is_valid():
             form.save()
+            invalidar_cache(usuario.pk)
             messages.success(request, f"Dados do usuário {usuario.username} atualizados com sucesso.")
             return redirect("usuarios:lista")
     else:
@@ -101,7 +109,7 @@ def usuario_editar(request, pk):
     })
 
 
-@login_required
+@requer_permissao("usuarios.cadastro.toggle_ativo")
 def usuario_toggle_ativo(request, pk):
     usuario = get_object_or_404(Usuario, pk=pk)
     if usuario == request.user:
@@ -113,3 +121,71 @@ def usuario_toggle_ativo(request, pk):
     status_str = "ativado" if usuario.is_active else "desativado"
     messages.success(request, f"Usuário {usuario.username} foi {status_str} com sucesso.")
     return redirect("usuarios:lista")
+
+
+@requer_permissao("usuarios.perfis.atribuir")
+def usuario_perfis_gerenciar(request, pk):
+    """
+    Tela de gerenciamento de perfis de um usuário específico.
+    Permite atribuir e remover perfis com auditoria completa.
+    """
+    usuario = get_object_or_404(Usuario, pk=pk)
+    todos_perfis = Perfil.objects.filter(ativo=True).order_by("nome")
+    vinculos = UsuarioPerfil.objects.filter(usuario=usuario).select_related("perfil", "atribuido_por")
+
+    if request.method == "POST":
+        perfis_ids = request.POST.getlist("perfis")
+        perfis_selecionados = Perfil.objects.filter(pk__in=perfis_ids, ativo=True)
+
+        # Desativa perfis desmarcados (preserva histórico)
+        removidos = UsuarioPerfil.objects.filter(usuario=usuario).exclude(perfil__in=perfis_selecionados)
+        for vp in removidos:
+            vp.ativo = False
+            vp.save(update_fields=["ativo"])
+            LogAcesso.objects.create(
+                tipo=LogAcesso.TIPO_REMOCAO,
+                usuario=usuario,
+                detalhe=f"Perfil '{vp.perfil.nome}' removido por {request.user.username}",
+                ip=request.META.get("REMOTE_ADDR"),
+            )
+
+        # Ativa ou cria novos vínculos
+        for perfil in perfis_selecionados:
+            vp, created = UsuarioPerfil.objects.update_or_create(
+                usuario=usuario,
+                perfil=perfil,
+                defaults={"ativo": True, "atribuido_por": request.user},
+            )
+            if created:
+                LogAcesso.objects.create(
+                    tipo=LogAcesso.TIPO_ATRIBUICAO,
+                    usuario=usuario,
+                    detalhe=f"Perfil '{perfil.nome}' atribuído por {request.user.username}",
+                    ip=request.META.get("REMOTE_ADDR"),
+                )
+
+        invalidar_cache(usuario.pk)
+        messages.success(request, f"Perfis do usuário {usuario.username} atualizados com sucesso.")
+        return redirect("usuarios:lista")
+
+    perfis_ativos_ids = set(
+        vinculos.filter(ativo=True).values_list("perfil_id", flat=True)
+    )
+
+    return render(request, "usuarios/perfis.html", {
+        "usuario": usuario,
+        "todos_perfis": todos_perfis,
+        "vinculos": vinculos,
+        "perfis_ativos_ids": perfis_ativos_ids,
+    })
+
+
+@login_required
+def meu_perfil(request):
+    """Exibe os perfis e permissões do próprio usuário logado."""
+    vinculos = UsuarioPerfil.objects.filter(
+        usuario=request.user, ativo=True
+    ).select_related("perfil").prefetch_related("perfil__acoes")
+    return render(request, "usuarios/meu_perfil.html", {
+        "vinculos": vinculos,
+    })

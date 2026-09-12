@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
+from accesscontrol.decorators import requer_permissao
 from services.relatorios_excel import gerar_excel_ficha
 from services.relatorios_pdf import gerar_pdf_ficha
 from veiculos.models import Viatura
@@ -19,7 +20,7 @@ from .forms import (
 from .models import FichaControle, RegistroUso
 
 
-@login_required
+@requer_permissao("operacao_diaria.fichas.visualizar")
 def ficha_lista(request):
     data_filtro = request.GET.get("data", "").strip()
     status_filtro = request.GET.get("status", "").strip()
@@ -32,7 +33,6 @@ def ficha_lista(request):
             fichas = fichas.filter(data_expediente=data_parsed)
         except ValueError:
             data_filtro = ""
-
 
     if status_filtro:
         fichas = fichas.filter(status=status_filtro)
@@ -49,7 +49,7 @@ def ficha_lista(request):
     })
 
 
-@login_required
+@requer_permissao("operacao_diaria.fichas.criar")
 def ficha_hoje(request):
     """
     Atalho inteligente: se a ficha de hoje existir, vai para ela; se não existir, cria automaticamente.
@@ -70,7 +70,7 @@ def ficha_hoje(request):
     return redirect("fichas:detalhe", pk=ficha.pk)
 
 
-@login_required
+@requer_permissao("operacao_diaria.fichas.criar")
 def ficha_criar(request):
     if request.method == "POST":
         form = FichaControleForm(request.POST)
@@ -93,7 +93,7 @@ def ficha_criar(request):
     })
 
 
-@login_required
+@requer_permissao("operacao_diaria.fichas.visualizar")
 def ficha_detalhe(request, pk):
     ficha = get_object_or_404(
         FichaControle.objects.select_related(
@@ -123,7 +123,7 @@ def ficha_detalhe(request, pk):
     })
 
 
-@login_required
+@requer_permissao("operacao_diaria.fichas.registrar_saida")
 def registro_saida_criar(request, ficha_pk):
     ficha = get_object_or_404(FichaControle, pk=ficha_pk)
 
@@ -159,7 +159,7 @@ def registro_saida_criar(request, ficha_pk):
     })
 
 
-@login_required
+@requer_permissao("operacao_diaria.fichas.registrar_chegada")
 def registro_chegada_concluir(request, pk):
     registro = get_object_or_404(RegistroUso.objects.select_related("ficha", "viatura"), pk=pk)
     ficha = registro.ficha
@@ -187,7 +187,7 @@ def registro_chegada_concluir(request, pk):
     })
 
 
-@login_required
+@requer_permissao("operacao_diaria.fichas.editar_registro")
 def registro_editar(request, pk):
     registro = get_object_or_404(RegistroUso.objects.select_related("ficha", "viatura"), pk=pk)
     ficha = registro.ficha
@@ -212,30 +212,22 @@ def registro_editar(request, pk):
     })
 
 
-@login_required
+@requer_permissao("operacao_diaria.fichas.apor_visto_nutran")
 def ficha_assinar_responsavel(request, pk):
     ficha = get_object_or_404(FichaControle, pk=pk)
-
-    if not request.user.is_responsavel_viaturas and not request.user.is_superuser:
-        messages.error(request, "Apenas o Responsável pelas Viaturas ou Administrador pode apor este visto.")
-        return redirect("fichas:detalhe", pk=ficha.pk)
 
     ficha.visto_responsavel = True
     ficha.responsavel_visto_usuario = request.user
     ficha.data_visto_responsavel = timezone.now()
     ficha.save(update_fields=["visto_responsavel", "responsavel_visto_usuario", "data_visto_responsavel"])
 
-    messages.success(request, "Visto do Responsável pelas Viaturas aplicado com sucesso.")
+    messages.success(request, "Visto do Responsável pelas Viaturas (NUTRAN) aplicado com sucesso.")
     return redirect("fichas:detalhe", pk=ficha.pk)
 
 
-@login_required
+@requer_permissao("operacao_diaria.fichas.apor_visto_chefia")
 def ficha_assinar_chefia(request, pk):
     ficha = get_object_or_404(FichaControle, pk=pk)
-
-    if not request.user.is_chefia and not request.user.is_superuser:
-        messages.error(request, "Apenas a Chefia ou Administrador pode apor este visto.")
-        return redirect("fichas:detalhe", pk=ficha.pk)
 
     ficha.visto_chefia = True
     ficha.chefia_visto_usuario = request.user
@@ -246,7 +238,7 @@ def ficha_assinar_chefia(request, pk):
     return redirect("fichas:detalhe", pk=ficha.pk)
 
 
-@login_required
+@requer_permissao("operacao_diaria.fichas.encerrar")
 def ficha_encerrar(request, pk):
     ficha = get_object_or_404(FichaControle, pk=pk)
 
@@ -264,7 +256,7 @@ def ficha_encerrar(request, pk):
     return redirect("fichas:detalhe", pk=ficha.pk)
 
 
-@login_required
+@requer_permissao("operacao_diaria.fichas.exportar_pdf")
 def exportar_ficha_pdf(request, pk):
     ficha = get_object_or_404(FichaControle, pk=pk)
     pdf_bytes = gerar_pdf_ficha(ficha)
@@ -273,10 +265,15 @@ def exportar_ficha_pdf(request, pk):
     return response
 
 
-@login_required
+@requer_permissao("operacao_diaria.fichas.exportar_excel")
 def exportar_ficha_excel(request, pk):
     ficha = get_object_or_404(FichaControle, pk=pk)
     excel_bytes = gerar_excel_ficha(ficha)
     response = HttpResponse(excel_bytes, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     response["Content-Disposition"] = f'attachment; filename="Ficha_Controle_PF_{ficha.data_expediente.strftime("%Y%m%d")}.xlsx"'
     return response
+
+
+# Mantém compatibilidade com @login_required para a view de listagem básica
+# que pode ser acessada por qualquer usuário autenticado que tenha visualizar
+ficha_lista.login_required = True

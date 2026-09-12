@@ -1,4 +1,4 @@
-{% load static %}
+{% load static permissoes %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -42,7 +42,13 @@
           </div>
           <div class="pf-user-info">
             <span class="pf-user-name">{{ user.get_full_name|default:user.username }}</span>
-            <span class="pf-user-role">{{ user.get_perfil_display }}</span>
+            <span class="pf-user-role">
+              {% for p in user.listar_perfis %}
+                {{ p }}{% if not forloop.last %}, {% endif %}
+              {% empty %}
+                Usuário
+              {% endfor %}
+            </span>
           </div>
         </div>
         <form action="{% url 'usuarios:logout' %}" method="post" style="display:inline;">
@@ -86,6 +92,8 @@
         </a>
       </li>
 
+      {% tem_perm "operacao_diaria.fichas.visualizar" as pode_fichas %}
+      {% if pode_fichas %}
       <li class="pf-menu-section-title">OPERAÇÃO DIÁRIA</li>
       <li class="pf-menu-item">
         <a href="{% url 'fichas:lista' %}" class="pf-menu-link {% if request.resolver_match.app_name == 'fichas' %}active{% endif %}">
@@ -93,26 +101,46 @@
           <span>Fichas de Controle</span>
         </a>
       </li>
+      {% endif %}
 
+      {% tem_perm "frota.viaturas.visualizar" as pode_viaturas %}
+      {% tem_perm "frota.manutencao.visualizar" as pode_manutencao %}
+      {% if pode_viaturas or pode_manutencao %}
       <li class="pf-menu-section-title">GESTÃO DE FROTA</li>
+      {% if pode_viaturas %}
       <li class="pf-menu-item">
         <a href="{% url 'veiculos:lista' %}" class="pf-menu-link {% if request.resolver_match.app_name == 'veiculos' and not 'manutencao' in request.path %}active{% endif %}">
           <i class="fas fa-car-side"></i>
           <span>Viaturas</span>
         </a>
       </li>
+      {% endif %}
+      {% if pode_manutencao %}
       <li class="pf-menu-item">
         <a href="{% url 'veiculos:lista_manutencoes' %}" class="pf-menu-link {% if 'manutencao' in request.path %}active{% endif %}">
           <i class="fas fa-tools"></i>
-          <span>Manutenções & Revisões</span>
+          <span>Manutenções &amp; Revisões</span>
         </a>
       </li>
+      {% endif %}
+      {% endif %}
 
+      {% tem_perm "usuarios.cadastro.visualizar" as pode_usuarios %}
+      {% if pode_usuarios %}
       <li class="pf-menu-section-title">ADMINISTRAÇÃO</li>
       <li class="pf-menu-item">
         <a href="{% url 'usuarios:lista' %}" class="pf-menu-link {% if request.resolver_match.app_name == 'usuarios' %}active{% endif %}">
           <i class="fas fa-users-cog"></i>
           <span>Usuários e Acessos</span>
+        </a>
+      </li>
+      {% endif %}
+
+      <li class="pf-menu-section-title">MEU ACESSO</li>
+      <li class="pf-menu-item">
+        <a href="{% url 'usuarios:meu_perfil' %}" class="pf-menu-link">
+          <i class="fas fa-id-badge"></i>
+          <span>Meu Perfil</span>
         </a>
       </li>
     </ul>

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Meu Perfil de Acesso{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <strong>Meu Perfil</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2><i class="fas fa-id-badge"></i> Meu Perfil de Acesso</h2>
+    <p>Perfis e permissões atribuídas ao seu usuário</p>
+  </div>
+</div>
+
+{% for vp in vinculos %}
+<div class="pf-card" style="margin-bottom: var(--space-16);">
+  <div class="pf-card-header">
+    <h3>
+      <span class="pf-badge pf-badge-info" style="font-size: 1rem; padding: 4px 12px;">
+        <i class="fas fa-user-shield"></i> {{ vp.perfil.nome|title }}
+      </span>
+    </h3>
+    <small>{{ vp.perfil.descricao }}</small>
+  </div>
+  <div class="pf-table-wrapper">
+    <table class="pf-table">
+      <thead>
+        <tr>
+          <th>Ação Permitida</th>
+          <th>Módulo</th>
+          <th>Tipo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for acao in vp.perfil.acoes.all %}
+        <tr>
+          <td><code>{{ acao.codigo_completo }}</code></td>
+          <td>{{ acao.nome }}</td>
+          <td>
+            {% if acao.tipo == 'tela' %}
+              <span class="pf-badge pf-badge-info">Tela</span>
+            {% elif acao.tipo == 'acao' %}
+              <span class="pf-badge pf-badge-success">Ação</span>
+            {% else %}
+              <span class="pf-badge pf-badge-warning">Dado</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% empty %}
+<div class="pf-card" style="text-align: center; padding: var(--space-32);">
+  <i class="fas fa-user-slash" style="font-size: 40px; color: var(--pf-grey-400);"></i>
+  <p style="margin-top: var(--space-16);">Nenhum perfil de acesso atribuído ao seu usuário.</p>
+  <p>Entre em contato com o administrador do sistema.</p>
+</div>
+{% endfor %}
+{% endblock %}

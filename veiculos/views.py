@@ -1,10 +1,10 @@
 from datetime import date
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
+from accesscontrol.decorators import requer_permissao
 from services.relatorios_excel import gerar_excel_manutencoes, gerar_excel_viaturas
 from services.relatorios_pdf import gerar_pdf_manutencoes_viatura, gerar_pdf_viaturas
 
@@ -12,7 +12,7 @@ from .forms import ManutencaoForm, ViaturaForm
 from .models import Manutencao, Setor, Viatura
 
 
-@login_required
+@requer_permissao("frota.viaturas.visualizar")
 def viatura_lista(request):
     termo = request.GET.get("q", "").strip()
     status_filtro = request.GET.get("status", "").strip()
@@ -66,7 +66,7 @@ def viatura_lista(request):
     })
 
 
-@login_required
+@requer_permissao("frota.viaturas.criar")
 def viatura_criar(request):
     if request.method == "POST":
         form = ViaturaForm(request.POST)
@@ -83,7 +83,7 @@ def viatura_criar(request):
     })
 
 
-@login_required
+@requer_permissao("frota.viaturas.editar")
 def viatura_editar(request, pk):
     viatura = get_object_or_404(Viatura, pk=pk)
 
@@ -103,7 +103,7 @@ def viatura_editar(request, pk):
     })
 
 
-@login_required
+@requer_permissao("frota.viaturas.visualizar")
 def viatura_detalhe(request, pk):
     viatura = get_object_or_404(Viatura, pk=pk)
     manutencoes = viatura.manutencoes.all()
@@ -120,7 +120,7 @@ def viatura_detalhe(request, pk):
     })
 
 
-@login_required
+@requer_permissao("frota.manutencao.criar")
 def manutencao_criar(request, viatura_pk):
     viatura = get_object_or_404(Viatura, pk=viatura_pk)
 
@@ -144,7 +144,7 @@ def manutencao_criar(request, viatura_pk):
     })
 
 
-@login_required
+@requer_permissao("frota.manutencao.visualizar")
 def manutencao_lista(request):
     manutencoes = Manutencao.objects.select_related("viatura", "registrado_por").order_by("-data_manutencao")
     return render(request, "veiculos/lista_manutencoes.html", {
@@ -152,7 +152,7 @@ def manutencao_lista(request):
     })
 
 
-@login_required
+@requer_permissao("frota.viaturas.visualizar")
 def exportar_viaturas_pdf(request):
     viaturas = Viatura.objects.filter(ativo=True).select_related("setor_pertencente", "responsavel_pessoa")
     pdf_bytes = gerar_pdf_viaturas(viaturas)
@@ -161,7 +161,7 @@ def exportar_viaturas_pdf(request):
     return response
 
 
-@login_required
+@requer_permissao("frota.viaturas.visualizar")
 def exportar_viaturas_excel(request):
     viaturas = Viatura.objects.filter(ativo=True).select_related("setor_pertencente", "responsavel_pessoa")
     excel_bytes = gerar_excel_viaturas(viaturas)
@@ -170,7 +170,7 @@ def exportar_viaturas_excel(request):
     return response
 
 
-@login_required
+@requer_permissao("frota.manutencao.visualizar")
 def exportar_manutencoes_pdf(request, pk):
     viatura = get_object_or_404(Viatura, pk=pk)
     manutencoes = viatura.manutencoes.all()
@@ -180,7 +180,7 @@ def exportar_manutencoes_pdf(request, pk):
     return response
 
 
-@login_required
+@requer_permissao("frota.manutencao.visualizar")
 def exportar_manutencoes_excel(request, pk):
     viatura = get_object_or_404(Viatura, pk=pk)
     manutencoes = viatura.manutencoes.all()

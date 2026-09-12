@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "veiculos.apps.VeiculosConfig",
     "fichas.apps.FichasConfig",
     "dashboard.apps.DashboardConfig",
+    "accesscontrol.apps.AccessControlConfig",
 ]
 
 MIDDLEWARE = [
@@ -60,6 +61,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "accesscontrol.middleware.PermissaoMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -76,6 +78,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "accesscontrol.context_processors.menu_context",
             ],
         },
     },
@@ -91,6 +94,14 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
+
+# Cache de permissões (LocMemCache para dev; configure Redis em produção)
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "app-viaturas-cache",
     }
 }
 

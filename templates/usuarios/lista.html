@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load permissoes %}
 
 {% block title %}Usuários e Acessos{% endblock %}
 
@@ -16,9 +17,12 @@
     <p>Controle de operadores, vigilantes, encarregados de frota e chefias</p>
   </div>
   <div>
+    {% tem_perm "usuarios.cadastro.criar" as pode_criar %}
+    {% if pode_criar %}
     <a href="{% url 'usuarios:criar' %}" class="pf-btn pf-btn-primary">
       <i class="fas fa-user-plus"></i> Novo Usuário
     </a>
+    {% endif %}
   </div>
 </div>
 
@@ -49,7 +53,7 @@
           <th>Matrícula</th>
           <th>Cargo / Função</th>
           <th>Setor</th>
-          <th>Perfil de Acesso</th>
+          <th>Perfis de Acesso</th>
           <th>Status</th>
           <th style="text-align: right;">Ações</th>
         </tr>
@@ -63,15 +67,21 @@
             <td>{{ u.cargo|default:"-" }}</td>
             <td>{{ u.setor|default:"-" }}</td>
             <td>
-              {% if u.perfil == 'ADMINISTRADOR' %}
-                <span class="pf-badge pf-badge-dark"><i class="fas fa-shield-alt"></i> {{ u.get_perfil_display }}</span>
-              {% elif u.perfil == 'CHEFIA' %}
-                <span class="pf-badge pf-badge-warning"><i class="fas fa-star"></i> {{ u.get_perfil_display }}</span>
-              {% elif u.perfil == 'RESPONSAVEL_VIATURAS' %}
-                <span class="pf-badge pf-badge-info"><i class="fas fa-key"></i> {{ u.get_perfil_display }}</span>
-              {% else %}
-                <span class="pf-badge pf-badge-success"><i class="fas fa-user-check"></i> {{ u.get_perfil_display }}</span>
-              {% endif %}
+              {% for nome_perfil in u.listar_perfis %}
+                {% if nome_perfil == 'administrador' %}
+                  <span class="pf-badge pf-badge-dark"><i class="fas fa-shield-alt"></i> {{ nome_perfil|title }}</span>
+                {% elif nome_perfil == 'chefia' %}
+                  <span class="pf-badge pf-badge-warning"><i class="fas fa-star"></i> {{ nome_perfil|title }}</span>
+                {% elif nome_perfil == 'nutran' %}
+                  <span class="pf-badge pf-badge-info"><i class="fas fa-key"></i> {{ nome_perfil|title }}</span>
+                {% elif nome_perfil == 'inteligencia' %}
+                  <span class="pf-badge pf-badge-dark" style="background: #5e35b1;"><i class="fas fa-eye"></i> {{ nome_perfil|title }}</span>
+                {% else %}
+                  <span class="pf-badge pf-badge-success"><i class="fas fa-user-check"></i> {{ nome_perfil|title }}</span>
+                {% endif %}
+              {% empty %}
+                <span class="pf-badge pf-badge-danger"><i class="fas fa-user-slash"></i> Sem perfil</span>
+              {% endfor %}
             </td>
             <td>
               {% if u.is_active %}
@@ -81,10 +91,21 @@
               {% endif %}
             </td>
             <td style="text-align: right; white-space: nowrap;">
+              {% tem_perm "usuarios.perfis.atribuir" as pode_perfis %}
+              {% if pode_perfis %}
+              <a href="{% url 'usuarios:perfis_gerenciar' u.pk %}" class="pf-btn pf-btn-sm pf-btn-ghost" title="Gerenciar Perfis">
+                <i class="fas fa-user-shield"></i> Perfis
+              </a>
+              {% endif %}
+              {% tem_perm "usuarios.cadastro.editar" as pode_editar %}
+              {% if pode_editar %}
               <a href="{% url 'usuarios:editar' u.pk %}" class="pf-btn pf-btn-sm pf-btn-secondary" title="Editar Usuário">
                 <i class="fas fa-edit"></i> Editar
               </a>
+              {% endif %}
               {% if u != request.user %}
+                {% tem_perm "usuarios.cadastro.toggle_ativo" as pode_toggle %}
+                {% if pode_toggle %}
                 <a href="{% url 'usuarios:toggle_ativo' u.pk %}" class="pf-btn pf-btn-sm {% if u.is_active %}pf-btn-ghost{% else %}pf-btn-outline{% endif %}" title="Alterar status de acesso">
                   {% if u.is_active %}
                     <i class="fas fa-user-slash"></i> Desativar
@@ -92,6 +113,7 @@
                     <i class="fas fa-user-check"></i> Ativar
                   {% endif %}
                 </a>
+                {% endif %}
               {% endif %}
             </td>
           </tr>

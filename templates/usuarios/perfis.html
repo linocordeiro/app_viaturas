@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load permissoes %}
+
+{% block title %}Gerenciar Perfis — {{ usuario.get_full_name|default:usuario.username }}{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <a href="{% url 'usuarios:lista' %}">Usuários</a>
+  <span>/</span>
+  <strong>Gerenciar Perfis</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2><i class="fas fa-user-shield"></i> Perfis de Acesso</h2>
+    <p>Gerenciar perfis do usuário <strong>{{ usuario.get_full_name|default:usuario.username }}</strong> ({{ usuario.username }})</p>
+  </div>
+  <div>
+    <a href="{% url 'usuarios:lista' %}" class="pf-btn pf-btn-ghost">
+      <i class="fas fa-arrow-left"></i> Voltar
+    </a>
+  </div>
+</div>
+
+<div class="pf-form-grid">
+  <!-- Formulário de seleção -->
+  <div class="col-6">
+    <div class="pf-card">
+      <div class="pf-card-header">
+        <h3><i class="fas fa-check-square"></i> Selecionar Perfis</h3>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <div style="padding: var(--space-16);">
+          {% for perfil in todos_perfis %}
+          <div class="pf-field" style="display: flex; align-items: flex-start; gap: var(--space-12); margin-bottom: var(--space-16);">
+            <input type="checkbox"
+                   class="pf-checkbox"
+                   id="perfil_{{ perfil.pk }}"
+                   name="perfis"
+                   value="{{ perfil.pk }}"
+                   {% if perfil.pk in perfis_ativos_ids %}checked{% endif %}
+                   style="margin-top: 4px; width: 18px; height: 18px; flex-shrink: 0;">
+            <label for="perfil_{{ perfil.pk }}" style="cursor: pointer;">
+              <strong>{{ perfil.nome|title }}</strong>
+              {% if perfil.descricao %}
+              <br><small style="color: var(--pf-grey-600);">{{ perfil.descricao }}</small>
+              {% endif %}
+              <br>
+              <small style="color: var(--pf-azul-pf);">
+                <i class="fas fa-key"></i> {{ perfil.acoes.count }} ações permitidas
+              </small>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+        <div style="padding: var(--space-16); border-top: 1px solid var(--pf-grey-200); display: flex; gap: var(--space-8);">
+          <button type="submit" class="pf-btn pf-btn-primary">
+            <i class="fas fa-save"></i> Salvar Perfis
+          </button>
+          <a href="{% url 'usuarios:lista' %}" class="pf-btn pf-btn-ghost">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Histórico de atribuições -->
+  <div class="col-6">
+    <div class="pf-card">
+      <div class="pf-card-header">
+        <h3><i class="fas fa-history"></i> Histórico de Atribuições</h3>
+      </div>
+      <div class="pf-table-wrapper">
+        <table class="pf-table">
+          <thead>
+            <tr>
+              <th>Perfil</th>
+              <th>Status</th>
+              <th>Atribuído por</th>
+              <th>Em</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for vp in vinculos %}
+            <tr>
+              <td><strong>{{ vp.perfil.nome|title }}</strong></td>
+              <td>
+                {% if vp.ativo %}
+                  <span class="pf-badge pf-badge-success">Ativo</span>
+                {% else %}
+                  <span class="pf-badge pf-badge-danger">Inativo</span>
+                {% endif %}
+              </td>
+              <td>{{ vp.atribuido_por.username|default:"sistema" }}</td>
+              <td>{{ vp.atribuido_em|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" style="text-align: center; padding: var(--space-24);">
+                <i class="fas fa-info-circle"></i> Nenhum histórico de atribuição.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
