@@ -7,7 +7,7 @@ Esta migration é idempotente via get_or_create.
 
 from django.db import migrations
 
-from accesscontrol.migrations.seeders import ESTRUTURA, PERFIL_LEGADO_MAP, PERFIS, WIDGETS
+from accesscontrol.seeders import ESTRUTURA, PERFIL_LEGADO_MAP, PERFIS, WIDGETS
 
 
 def criar_estrutura(apps, schema_editor):
@@ -132,9 +132,9 @@ def criar_estrutura(apps, schema_editor):
 
 def remover_estrutura(apps, schema_editor):
     """Reverte o seed (usado apenas no rollback da migration)."""
-    from accesscontrol.migrations.seeders import ESTRUTURA as E
-    from accesscontrol.migrations.seeders import PERFIS as P
-    from accesscontrol.migrations.seeders import WIDGETS as W
+    from accesscontrol.seeders import ESTRUTURA as E
+    from accesscontrol.seeders import PERFIS as P
+    from accesscontrol.seeders import WIDGETS as W
 
     Modulo = apps.get_model("accesscontrol", "Modulo")
     Perfil = apps.get_model("accesscontrol", "Perfil")

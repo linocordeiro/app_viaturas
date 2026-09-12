@@ -13,7 +13,7 @@ Este comando é idempotente — pode ser executado múltiplas vezes sem efeitos 
 
 from django.core.management.base import BaseCommand
 
-from accesscontrol.migrations.seeders import ESTRUTURA, PERFIS, WIDGETS
+from accesscontrol.seeders import ESTRUTURA, PERFIS, WIDGETS
 
 
 class Command(BaseCommand):
