@@ -25,7 +25,7 @@ def ficha_lista(request):
     data_filtro = request.GET.get("data", "").strip()
     status_filtro = request.GET.get("status", "").strip()
 
-    fichas = FichaControle.objects.select_related("vigilante", "responsavel_visto_usuario", "chefia_visto_usuario").all()
+    fichas = FichaControle.objects.select_related("vigilante", "responsavel_visto_usuario", "chefia_visto_usuario").order_by("-data_expediente", "-horario_inicio")
 
     if data_filtro:
         try:

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load permissoes %}
 {% block title %}Fichas de Controle Diário{% endblock %}
 
 {% block breadcrumb %}
@@ -114,12 +114,19 @@
               <a href="{% url 'fichas:detalhe' f.pk %}" class="pf-btn pf-btn-sm pf-btn-secondary" title="Abrir Ficha">
                 <i class="fas fa-folder-open"></i> Acessar
               </a>
+              {% tem_perm "operacao_diaria.fichas.exportar_pdf" as pode_pdf %}
+              {% if pode_pdf %}
               <a href="{% url 'fichas:exportar_pdf' f.pk %}" class="pf-btn pf-btn-sm pf-btn-ghost" title="Exportar PDF Oficial">
                 <i class="fas fa-file-pdf" style="color: var(--pf-red-500);"></i>
               </a>
+              {% endif %}
+              
+              {% tem_perm "operacao_diaria.fichas.exportar_excel" as pode_excel %}
+              {% if pode_excel %}
               <a href="{% url 'fichas:exportar_excel' f.pk %}" class="pf-btn pf-btn-sm pf-btn-ghost" title="Exportar Planilha Excel">
                 <i class="fas fa-file-excel" style="color: var(--pf-green-500);"></i>
               </a>
+              {% endif %}
             </td>
           </tr>
         {% empty %}

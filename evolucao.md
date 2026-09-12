@@ -25,6 +25,18 @@
 
 ## Histórico de Commits
 
+### Controle de Acesso e Ordenação (Lista de Fichas) · 12/09/2026
+
+**Tipo:** `feat` — Melhorias de UI e ACL  
+**Branch:** `develop`
+
+**Descrição:**
+- Ocultação dos botões de exportação (PDF e Excel) na tela de listagem de Fichas para perfis sem permissão (ex: Vigilante).
+- Adição de ordenação cronológica decrescente (mais recentes primeiro) na listagem das Fichas Diárias.
+
+---
+
+
 ### Funcionalidades de Gestão de Turnos · 12/09/2026
 
 **Tipo:** `feat` — Gestão de Turnos, Modal e Melhorias na UI  
