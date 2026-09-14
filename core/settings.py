@@ -35,6 +35,9 @@ DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
 
 _allowed_hosts_env = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost,*")
 ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_env.split(",") if host.strip()]
+if "testserver" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("testserver")
+
 
 
 
@@ -61,6 +64,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "accesscontrol.middleware.AuditoriaContextMiddleware",
     "accesscontrol.middleware.PermissaoMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

@@ -87,7 +87,26 @@ ESTRUTURA = [
             },
         ],
     },
+    {
+        "nome": "Auditoria do Sistema",
+        "codigo": "auditoria",
+        "icone": "fas fa-shield-alt",
+        "ordem": 4,
+        "submodulos": [
+            {
+                "nome": "Logs de Auditoria",
+                "codigo": "logs",
+                "ordem": 1,
+                "acoes": [
+                    ("visualizar", "Visualizar logs e trilha de auditoria", "tela"),
+                    ("detalhes", "Visualizar detalhes de alteração e payloads", "acao"),
+                    ("exportar", "Exportar logs de auditoria", "acao"),
+                ],
+            },
+        ],
+    },
 ]
+
 
 WIDGETS = [
     ("ficha_hoje", "Status da ficha do dia", 1),

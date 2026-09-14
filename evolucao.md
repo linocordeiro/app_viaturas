@@ -25,7 +25,23 @@
 
 ## Histórico de Commits
 
+### Sistema de Auditoria, Telas de Erro e Códigos Numéricos de Log · 13/09/2026
+
+**Tipo:** `feat` — Sistema de Auditoria, Telas de Erro e Módulo Lateral de Logs  
+**Branch:** `develop`
+
+**Descrição:**
+- **Catálogo de Códigos Numéricos de Ação:** Padronização estruturada por faixas semânticas (1001 Login, 1002 Logout, 1003 Falha de login, 2001 Acesso bloqueado 403, 3001 Cadastro de viatura, 3002 Edição de viatura, 4001 Abertura de ficha, 4010 Saída de viatura, 4011 Retorno de viatura, 5001 Cadastro de usuário, 9001 Erro 500 no servidor).
+- **Modelo de Auditoria Imutável (`LogAuditoria`):** Registro detalhado com código numérico indexado, categoria, usuário, URL acessada, método HTTP, endereço IP, status code, objeto afetado e payload JSON com diff da alteração.
+- **Captura Transparente via Contexto e Signals:** Criação do `AuditoriaContextMiddleware` gerenciando requisições com `contextvars` thread-safe, combinado com receivers de signals de autenticação (`user_logged_in`, `user_logged_out`, `user_login_failed`) e modelos de dados (`Viatura`, `Manutencao`, `FichaControle`, `RegistroUso`, `Usuario`, `UsuarioPerfil`).
+- **Módulo na Barra Lateral e Controle Estrito de ACL:** Seção **AUDITORIA** na barra lateral corporativa com o item **Logs de Auditoria** (ícone `fas fa-shield-alt`), restrito estritamente a administradores via permissão `auditoria.logs.visualizar`. Usuários de outros perfis (Vigilante, NUTRAN, Inteligência, Chefia) têm o menu oculto e qualquer tentativa de acesso direto é bloqueada com HTTP 403 e registrada com o código `2001`.
+- **Telas de Erro Institucionais Frontline PF:** Implementação e padronização das telas 400 (Requisição Inválida), 403 (Acesso Não Autorizado), 404 (Página Não Encontrada) e 500 (Erro Interno do Servidor) com Brasão Oficial da PF, tipografia Roboto e botões de contingência.
+- **Painel Analítico de Logs com Filtros Avançados:** Interface em tabela Frontline PF com badges categorizados, paginação limpa, modal com inspeção de detalhes JSON e filtros por intervalo de data, intervalo de horário (início/fim para plantões), código numérico da ação e busca por usuário.
+
+---
+
 ### Controle de Acesso e Ordenação (Lista de Fichas) · 12/09/2026
+
 
 **Tipo:** `feat` — Melhorias de UI e ACL  
 **Branch:** `develop`

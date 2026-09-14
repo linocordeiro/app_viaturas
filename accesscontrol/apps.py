@@ -8,8 +8,10 @@ class AccessControlConfig(AppConfig):
 
     def ready(self):
         import accesscontrol.signals  # noqa: F401
+        import accesscontrol.signals_auditoria  # noqa: F401
 
         # O signal m2m_changed precisa da classe real do model,
         # por isso é conectado aqui, após todos os apps estarem carregados
         from accesscontrol.signals import conectar_signal_m2m
         conectar_signal_m2m()
+

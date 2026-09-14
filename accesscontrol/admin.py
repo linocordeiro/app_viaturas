@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Acao, DashboardWidget, LogAcesso, Modulo, Perfil, Submodulo, UsuarioPerfil
+from .models import Acao, DashboardWidget, LogAcesso, LogAuditoria, Modulo, Perfil, Submodulo, UsuarioPerfil
 
 
 @admin.register(Modulo)
@@ -68,3 +68,36 @@ class LogAcessoAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False  # Log é imutável
+
+
+@admin.register(LogAuditoria)
+class LogAuditoriaAdmin(admin.ModelAdmin):
+    list_display = ("codigo", "descricao", "categoria", "usuario_repr", "metodo_http", "url", "ip", "criado_em")
+    list_filter = ("categoria", "codigo", "metodo_http", "criado_em")
+    search_fields = ("codigo", "descricao", "usuario_repr", "url", "ip", "objeto_repr")
+    readonly_fields = (
+        "codigo",
+        "descricao",
+        "categoria",
+        "usuario",
+        "usuario_repr",
+        "url",
+        "metodo_http",
+        "status_code",
+        "ip",
+        "objeto_repr",
+        "objeto_id",
+        "tabela_afetada",
+        "detalhes",
+        "criado_em",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+

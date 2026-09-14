@@ -99,7 +99,7 @@ class Command(BaseCommand):
             )
             prefixo = self.style.SUCCESS("  [CRIADO]") if criado else "  [OK]"
 
-            if options["reset"] or criado:
+            if options["reset"] or criado or config["acoes"] == "__all__":
                 if config["acoes"] == "__all__":
                     acoes_do_perfil = todas_as_acoes
                 else:
@@ -112,8 +112,9 @@ class Command(BaseCommand):
                     widgets_do_perfil = [w for w in todos_os_widgets if w.codigo in config["widgets"]]
                 perfil.widgets.set(widgets_do_perfil)
 
-                self.stdout.write(f"{prefixo} {nome_perfil} — {perfil.acoes.count()} ações, {perfil.widgets.count()} widgets")
+                self.stdout.write(f"{prefixo} {nome_perfil} — {perfil.acoes.count()} acoes, {perfil.widgets.count()} widgets")
             else:
-                self.stdout.write(f"  [SKIP] {nome_perfil} (já existe — use --reset para sobrescrever ações)")
+                self.stdout.write(f"  [SKIP] {nome_perfil} (ja existe - use --reset para sobrescrever acoes)")
 
-        self.stdout.write(self.style.SUCCESS("\n✓ Setup de permissões concluído com sucesso!"))
+        self.stdout.write(self.style.SUCCESS("\n[OK] Setup de permissoes concluido com sucesso!"))
+

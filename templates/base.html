@@ -136,7 +136,19 @@
       </li>
       {% endif %}
 
+      {% tem_perm "auditoria.logs.visualizar" as pode_auditoria %}
+      {% if pode_auditoria %}
+      <li class="pf-menu-section-title">AUDITORIA</li>
+      <li class="pf-menu-item">
+        <a href="{% url 'accesscontrol:auditoria_lista' %}" class="pf-menu-link {% if request.resolver_match.app_name == 'accesscontrol' %}active{% endif %}">
+          <i class="fas fa-shield-alt"></i>
+          <span>Logs de Auditoria</span>
+        </a>
+      </li>
+      {% endif %}
+
       <li class="pf-menu-section-title">MEU ACESSO</li>
+
       <li class="pf-menu-item">
         <a href="{% url 'usuarios:meu_perfil' %}" class="pf-menu-link">
           <i class="fas fa-id-badge"></i>
