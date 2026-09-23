@@ -173,18 +173,20 @@
               {% endif %}
             </td>
             <td style="text-align: right; white-space: nowrap;">
-              {% if ficha.pode_editar %}
-                {% if reg.status == 'EM_TRANSITO' %}
-                  <a href="{% url 'fichas:chegada_concluir' reg.pk %}" class="pf-btn pf-btn-sm pf-btn-success" title="Registrar Retorno da Viatura">
-                    <i class="fas fa-sign-in-alt"></i> Registrar Chegada
+              <div class="pf-table-actions">
+                {% if ficha.pode_editar %}
+                  {% if reg.status == 'EM_TRANSITO' %}
+                    <a href="{% url 'fichas:chegada_concluir' reg.pk %}" class="pf-action-btn pf-action-success" title="Registrar Retorno da Viatura" aria-label="Registrar Retorno">
+                      <i class="fas fa-sign-in-alt"></i>
+                    </a>
+                  {% endif %}
+                  <a href="{% url 'fichas:registro_editar' reg.pk %}" class="pf-action-btn pf-action-edit" title="Editar Registro" aria-label="Editar Registro">
+                    <i class="fas fa-edit"></i>
                   </a>
+                {% else %}
+                  <span class="pf-small" style="color: var(--pf-grey-500);"><i class="fas fa-check"></i> Concluído</span>
                 {% endif %}
-                <a href="{% url 'fichas:registro_editar' reg.pk %}" class="pf-btn pf-btn-sm pf-btn-ghost" title="Editar Registro">
-                  <i class="fas fa-edit"></i>
-                </a>
-              {% else %}
-                <span class="pf-small" style="color: var(--pf-grey-500);"><i class="fas fa-check"></i> Concluído</span>
-              {% endif %}
+              </div>
             </td>
           </tr>
         {% empty %}

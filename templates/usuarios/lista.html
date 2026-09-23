@@ -81,18 +81,25 @@
               {% endif %}
             </td>
             <td style="text-align: right; white-space: nowrap;">
-              <a href="{% url 'usuarios:editar' u.pk %}" class="pf-btn pf-btn-sm pf-btn-secondary" title="Editar Usuário">
-                <i class="fas fa-edit"></i> Editar
-              </a>
-              {% if u != request.user %}
-                <a href="{% url 'usuarios:toggle_ativo' u.pk %}" class="pf-btn pf-btn-sm {% if u.is_active %}pf-btn-ghost{% else %}pf-btn-outline{% endif %}" title="Alterar status de acesso">
-                  {% if u.is_active %}
-                    <i class="fas fa-user-slash"></i> Desativar
-                  {% else %}
-                    <i class="fas fa-user-check"></i> Ativar
-                  {% endif %}
+              <div class="pf-table-actions">
+                <a href="{% url 'usuarios:editar' u.pk %}" class="pf-action-btn pf-action-edit" title="Editar Usuário" aria-label="Editar Usuário">
+                  <i class="fas fa-edit"></i>
                 </a>
-              {% endif %}
+                {% if request.user.is_admin_user %}
+                  <a href="{% url 'usuarios:resetar_senha' u.pk %}" class="pf-action-btn pf-action-service" title="Redefinir senha para padrão (mudar@123)" aria-label="Resetar Senha" onclick="return confirm('Deseja realmente redefinir a senha do usuário {{ u.username }} para o padrão \'mudar@123\'?');">
+                    <i class="fas fa-key"></i>
+                  </a>
+                {% endif %}
+                {% if u != request.user %}
+                  <a href="{% url 'usuarios:toggle_ativo' u.pk %}" class="pf-action-btn {% if u.is_active %}pf-action-danger{% else %}pf-action-success{% endif %}" title="{% if u.is_active %}Desativar Acesso do Usuário{% else %}Ativar Acesso do Usuário{% endif %}" aria-label="{% if u.is_active %}Desativar Usuário{% else %}Ativar Usuário{% endif %}">
+                    {% if u.is_active %}
+                      <i class="fas fa-user-slash"></i>
+                    {% else %}
+                      <i class="fas fa-user-check"></i>
+                    {% endif %}
+                  </a>
+                {% endif %}
+              </div>
             </td>
           </tr>
         {% empty %}

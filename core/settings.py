@@ -18,8 +18,11 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Carrega variáveis do arquivo .env
-load_dotenv(BASE_DIR / ".env")
+# Carregar variáveis de ambiente do arquivo .env na raiz do projeto (ao iniciar ou reiniciar o servidor)
+try:
+    load_dotenv(os.path.join(BASE_DIR, ".env"), override=True)
+except (PermissionError, OSError):
+    pass
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -30,12 +33,35 @@ SECRET_KEY = os.getenv(
     "django-insecure-kqat%!_#$wn75-(uj_c3d+51$jetu!=hopn#kanwt6^30*qtu-",
 )
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
 
-_allowed_hosts_env = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost,*")
-ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_env.split(",") if host.strip()]
+# Configuração de Ambiente de banco de dados: production / development
+DB_ENV = os.environ.get("DB_ENV", "development").strip().lower()
 
+if DB_ENV == "production":
+    DEBUG = False
+    DATABASE_NAME = str(BASE_DIR / "database" / "db_prod.sqlite3")
+else:
+    DB_ENV = "development"
+    DEBUG = True
+    DATABASE_NAME = str(BASE_DIR / "database" / "db_dev.sqlite3")
+
+# Configuração de Ambiente de aplicação: local / operacao
+APP_ENV = os.environ.get("APP_ENV", "local").strip().lower()
+
+if APP_ENV == "local":
+    DEBUG = True
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost", "testserver"]
+    CSRF_TRUSTED_ORIGINS = ["http://localhost", "http://127.0.0.1"]
+elif APP_ENV == "operacao":
+    DEBUG = False
+    ALLOWED_HOSTS = ["10.68.6.121"]
+    CSRF_TRUSTED_ORIGINS = [
+        "https://10.68.6.121",
+        "https://10.68.6.121:8443",
+    ]
+
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
 # Application definition
@@ -55,7 +81,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "dashboard.middleware.EnvReloadMiddleware",
+    "dashboard.middleware.RealIPMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -90,7 +119,7 @@ WSGI_APPLICATION = "core.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": DATABASE_NAME,
     }
 }
 

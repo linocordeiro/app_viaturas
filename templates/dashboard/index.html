@@ -148,10 +148,12 @@
             </td>
             <td>{{ reg.odometro_saida|stringformat:"d" }} km</td>
             <td>{{ reg.ficha.data_expediente|date:"d/m/Y" }}</td>
-            <td style="text-align: right;">
-              <a href="{% url 'fichas:chegada_concluir' reg.pk %}" class="pf-btn pf-btn-sm pf-btn-success" title="Registrar Chegada da Viatura">
-                <i class="fas fa-sign-in-alt"></i> Registrar Chegada
-              </a>
+            <td style="text-align: right; white-space: nowrap;">
+              <div class="pf-table-actions">
+                <a href="{% url 'fichas:chegada_concluir' reg.pk %}" class="pf-action-btn pf-action-success" title="Registrar Chegada da Viatura" aria-label="Registrar Chegada">
+                  <i class="fas fa-sign-in-alt"></i>
+                </a>
+              </div>
             </td>
           </tr>
         {% empty %}
@@ -255,10 +257,12 @@
                 {% endif %}
                 <div class="pf-small" style="color: var(--pf-grey-600); margin-top: 2px;">{{ item.alerta.mensagens.0 }}</div>
               </td>
-              <td style="text-align: right;">
-                <a href="{% url 'veiculos:manutencao_criar' item.viatura.pk %}" class="pf-btn pf-btn-sm pf-btn-gold">
-                  <i class="fas fa-tools"></i> Registrar Serviço
-                </a>
+              <td style="text-align: right; white-space: nowrap;">
+                <div class="pf-table-actions">
+                  <a href="{% url 'veiculos:manutencao_criar' item.viatura.pk %}" class="pf-action-btn pf-action-service" title="Registrar Manutenção / Serviço" aria-label="Registrar Serviço">
+                    <i class="fas fa-tools"></i>
+                  </a>
+                </div>
               </td>
             </tr>
           {% endfor %}

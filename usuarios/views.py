@@ -113,3 +113,22 @@ def usuario_toggle_ativo(request, pk):
     status_str = "ativado" if usuario.is_active else "desativado"
     messages.success(request, f"Usuário {usuario.username} foi {status_str} com sucesso.")
     return redirect("usuarios:lista")
+
+
+@login_required
+def usuario_resetar_senha(request, pk):
+    if not getattr(request.user, "is_admin_user", False):
+        messages.error(request, "Permissão negada. Apenas administradores podem redefinir senhas.")
+        return redirect("usuarios:lista")
+
+    usuario = get_object_or_404(Usuario, pk=pk)
+    usuario.set_password("mudar@123")
+    usuario.save()
+
+    nome_exibicao = usuario.get_full_name() or usuario.username
+    messages.success(
+        request,
+        f"A senha do usuário '{usuario.username}' ({nome_exibicao}) foi resetada com sucesso para a senha padrão 'mudar@123'."
+    )
+    return redirect("usuarios:lista")
+
