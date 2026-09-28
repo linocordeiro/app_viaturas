@@ -30,15 +30,19 @@ SECRET_KEY = os.getenv(
     "django-insecure-kqat%!_#$wn75-(uj_c3d+51$jetu!=hopn#kanwt6^30*qtu-",
 )
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "yes")
+# Configurações de Ambiente (APP_ENV: local ou operacao)
+APP_ENV = os.getenv("APP_ENV", "local").strip().lower()
 
-_allowed_hosts_env = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost,*")
-ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts_env.split(",") if host.strip()]
+if APP_ENV == "operacao":
+    DEBUG = False
+    ALLOWED_HOSTS = ["10.68.6.121"]
+else:  # local (padrão de desenvolvimento)
+    DEBUG = True
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+
+# Mantém testserver para a execução de testes automatizados do Django
 if "testserver" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append("testserver")
-
-
 
 
 # Application definition
@@ -61,9 +65,11 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "core.middleware.DynamicDatabaseMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "core.middleware.ManutencaoMiddleware",
     "accesscontrol.middleware.AuditoriaContextMiddleware",
     "accesscontrol.middleware.PermissaoMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -83,6 +89,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "accesscontrol.context_processors.menu_context",
+                "core.context_processors.ambiente_context",
             ],
         },
     },
@@ -94,12 +101,27 @@ WSGI_APPLICATION = "core.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+DATABASE_DIR = BASE_DIR / "database"
+
+_db_env_init = os.getenv("DB_ENV", "desenvolvimento").strip().lower()
+_is_prod_init = _db_env_init in ("producao", "production", "prod")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+        "NAME": DATABASE_DIR / "db_prod.sqlite3" if _is_prod_init else DATABASE_DIR / "db_dev.sqlite3",
+    },
+    "desenvolvimento": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": DATABASE_DIR / "db_dev.sqlite3",
+    },
+    "producao": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": DATABASE_DIR / "db_prod.sqlite3",
+    },
 }
+
+DATABASE_ROUTERS = ["core.db_router.DynamicDatabaseRouter"]
 
 # Cache de permissões (LocMemCache para dev; configure Redis em produção)
 CACHES = {

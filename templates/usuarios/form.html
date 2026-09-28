@@ -26,9 +26,25 @@
   <form method="post">
     {% csrf_token %}
 
+    {% if form.errors %}
+      <div class="pf-alert pf-alert-danger" style="margin-bottom: var(--space-20);">
+        <i class="fas fa-exclamation-circle" style="font-size: 20px;"></i>
+        <div>
+          <strong>Não foi possível salvar o usuário. Corrija os campos abaixo:</strong>
+          <ul style="margin: 6px 0 0 16px; padding: 0;">
+            {% for field, error_list in form.errors.items %}
+              {% for err in error_list %}
+                <li><strong>{% if field == '__all__' %}Geral{% else %}{{ field }}{% endif %}:</strong> {{ err }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+
     <div class="pf-card-header">
       <div class="pf-card-title">
-        <i class="fas fa-id-card"></i> Identificação e Credenciais
+        <i class="fas fa-id-card"></i> 1. Identificação e Dados Funcionais
       </div>
     </div>
 
@@ -81,7 +97,7 @@
         </div>
       </div>
 
-      <div class="col-4">
+      <div class="col-6">
         <div class="pf-field">
           <label for="{{ form.setor.id_for_label }}">{{ form.setor.label }}</label>
           {{ form.setor }}
@@ -89,27 +105,160 @@
         </div>
       </div>
 
-      <div class="col-4">
+      <div class="col-6">
         <div class="pf-field">
           <label for="{{ form.telefone.id_for_label }}">{{ form.telefone.label }}</label>
           {{ form.telefone }}
           {% if form.telefone.errors %}<div class="pf-error-text">{{ form.telefone.errors.0 }}</div>{% endif %}
         </div>
       </div>
+    </div>
 
-      <div class="col-4">
+    <div class="pf-card-header" style="margin-top: var(--space-24);">
+      <div class="pf-card-title">
+        <i class="fas fa-user-shield"></i> 2. Perfis de Acesso ao Sistema
+      </div>
+    </div>
+
+    <style>
+      .pf-perfis-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: var(--space-16);
+        margin-top: var(--space-12);
+      }
+      .pf-perfil-card {
+        background: #ffffff;
+        border: 2px solid var(--pf-grey-300);
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        position: relative;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      }
+      .pf-perfil-card:hover {
+        border-color: var(--pf-blue-500);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 51, 102, 0.1);
+      }
+      .pf-perfil-card.is-selected {
+        border-color: var(--pf-blue-500);
+        background: #F4F8FC;
+        box-shadow: 0 0 0 1px var(--pf-blue-500), 0 4px 12px rgba(0, 51, 102, 0.12);
+      }
+      .pf-perfil-card-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+      .pf-perfil-icon-box {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+      }
+      .pf-perfil-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--pf-black);
+        margin-bottom: 4px;
+      }
+      .pf-perfil-desc {
+        font-size: 12px;
+        color: var(--pf-grey-600);
+        line-height: 1.4;
+      }
+    </style>
+
+    <div class="pf-form-grid">
+      <div class="col-12">
         <div class="pf-field">
-          <label for="{{ form.perfil.id_for_label }}" class="required">{{ form.perfil.label }}</label>
-          {{ form.perfil }}
-          {% if form.perfil.errors %}<div class="pf-error-text">{{ form.perfil.errors.0 }}</div>{% endif %}
+          <label class="required"><strong>Selecione os Perfis de Acesso do Usuário:</strong></label>
+          <div class="pf-perfis-grid">
+            {% for checkbox in form.perfis %}
+              {% with label_lower=checkbox.choice_label|lower %}
+              <div class="pf-perfil-card" onclick="togglePerfilCard(this, event)">
+                <div class="pf-perfil-card-top">
+                  {% if "admin" in label_lower %}
+                    <div class="pf-perfil-icon-box" style="background: #FEF3C7; color: #B45309;"><i class="fas fa-shield-alt"></i></div>
+                    <span class="pf-badge pf-badge-dark" style="font-size: 11px;">Acesso Total</span>
+                  {% elif "chefi" in label_lower %}
+                    <div class="pf-perfil-icon-box" style="background: #FFFBEB; color: #D97706;"><i class="fas fa-star"></i></div>
+                    <span class="pf-badge pf-badge-warning" style="font-size: 11px;">Gestão</span>
+                  {% elif "nutran" in label_lower %}
+                    <div class="pf-perfil-icon-box" style="background: #EFF6FF; color: #1D4ED8;"><i class="fas fa-car-side"></i></div>
+                    <span class="pf-badge pf-badge-info" style="font-size: 11px;">Frota</span>
+                  {% elif "intelig" in label_lower %}
+                    <div class="pf-perfil-icon-box" style="background: #F3E8FF; color: #7C3AED;"><i class="fas fa-user-secret"></i></div>
+                    <span class="pf-badge pf-badge-dark" style="background: #6B21A8; font-size: 11px;">Inteligência</span>
+                  {% elif "vigilan" in label_lower %}
+                    <div class="pf-perfil-icon-box" style="background: #ECFDF5; color: #059669;"><i class="fas fa-id-badge"></i></div>
+                    <span class="pf-badge pf-badge-success" style="font-size: 11px;">Portaria</span>
+                  {% else %}
+                    <div class="pf-perfil-icon-box" style="background: #F3F4F6; color: #4B5563;"><i class="fas fa-user-tag"></i></div>
+                    <span class="pf-badge pf-badge-secondary" style="font-size: 11px;">Operacional</span>
+                  {% endif %}
+                </div>
+
+                <div>
+                  <div class="pf-perfil-title">{{ checkbox.choice_label|title }}</div>
+                  <div class="pf-perfil-desc">
+                    {% if "admin" in label_lower %}
+                      Gestão completa do sistema, parametrização, auditoria e controle de acessos.
+                    {% elif "chefi" in label_lower %}
+                      Vistos executivos nas fichas diárias, autorizações e relatórios consolidados.
+                    {% elif "nutran" in label_lower %}
+                      Gestão do parque de viaturas, manutenções, quilometragem e fiscalizações.
+                    {% elif "intelig" in label_lower %}
+                      Acesso sigiloso para consultas operacionais e relatórios estratégicos.
+                    {% elif "vigilan" in label_lower %}
+                      Abertura de fichas diárias, controle de entradas, saídas e avarias de viaturas.
+                    {% else %}
+                      Acesso aos recursos autorizados do sistema de viaturas.
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--pf-grey-200); display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 13px; font-weight: 600; color: var(--pf-grey-700);">Atribuir Perfil</span>
+                  <div style="transform: scale(1.15);">{{ checkbox.tag }}</div>
+                </div>
+              </div>
+              {% endwith %}
+            {% endfor %}
+          </div>
+          <small class="pf-small" style="margin-top: 8px; display: block;">{{ form.perfis.help_text }}</small>
+          {% if form.perfis.errors %}<div class="pf-error-text">{{ form.perfis.errors.0 }}</div>{% endif %}
         </div>
       </div>
+    </div>
 
+    <div class="pf-card-header" style="margin-top: var(--space-24);">
+      <div class="pf-card-title">
+        <i class="fas fa-lock"></i> 3. Credenciais de Acesso e Status
+      </div>
+    </div>
+
+    <div class="pf-form-grid">
       <div class="col-6">
         <div class="pf-field">
           <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
           {{ form.password }}
-          <small class="pf-small">{{ form.password.help_text }}</small>
+          <small class="pf-small">
+            {% if not form.instance.pk %}
+              <i class="fas fa-info-circle" style="color: var(--pf-blue-500);"></i> Senha padrão inicial para novos usuários: <strong>mudar@123</strong>
+            {% else %}
+              <i class="fas fa-info-circle"></i> Deixe em branco para manter a senha atual do usuário.
+            {% endif %}
+          </small>
           {% if form.password.errors %}<div class="pf-error-text">{{ form.password.errors.0 }}</div>{% endif %}
         </div>
       </div>
@@ -130,4 +279,37 @@
     </div>
   </form>
 </div>
+
+<script>
+  function togglePerfilCard(card, event) {
+    var checkbox = card.querySelector('input[type="checkbox"]');
+    if (checkbox && event.target !== checkbox) {
+      checkbox.checked = !checkbox.checked;
+      checkbox.dispatchEvent(new Event('change'));
+    }
+    syncCardState(card);
+  }
+
+  function syncCardState(card) {
+    var checkbox = card.querySelector('input[type="checkbox"]');
+    if (checkbox && checkbox.checked) {
+      card.classList.add('is-selected');
+    } else {
+      card.classList.remove('is-selected');
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    var cards = document.querySelectorAll('.pf-perfil-card');
+    cards.forEach(function(card) {
+      syncCardState(card);
+      var checkbox = card.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        checkbox.addEventListener('change', function() {
+          syncCardState(card);
+        });
+      }
+    });
+  });
+</script>
 {% endblock %}

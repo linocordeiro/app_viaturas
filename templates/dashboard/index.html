@@ -95,18 +95,27 @@
     </div>
     <div>
       {% if ficha_hoje %}
+        {% tem_perm 'operacao_diaria.fichas.visualizar' as pode_ver_ficha %}
+        {% if pode_ver_ficha %}
         <a href="{% url 'fichas:detalhe' ficha_hoje.pk %}" class="pf-btn pf-btn-gold">
           <i class="fas fa-folder-open"></i> Acessar Ficha Diária
         </a>
+        {% endif %}
         {% if ficha_hoje.pode_editar %}
-          <a href="{% url 'fichas:saida_criar' ficha_hoje.pk %}" class="pf-btn pf-btn-primary">
-            <i class="fas fa-key"></i> Lançar Saída
+          {% tem_perm 'operacao_diaria.fichas.registrar_saida' as pode_saida %}
+          {% if pode_saida %}
+          <a href="{% url 'fichas:movimentacao_criar' ficha_hoje.pk %}" class="pf-btn pf-btn-primary">
+            <i class="fas fa-exchange-alt"></i> Registrar Movimentação
           </a>
+          {% endif %}
         {% endif %}
       {% else %}
+        {% tem_perm 'operacao_diaria.fichas.criar' as pode_criar_ficha %}
+        {% if pode_criar_ficha %}
         <a href="{% url 'fichas:hoje' %}" class="pf-btn pf-btn-primary">
           <i class="fas fa-plus"></i> Abrir Ficha de Hoje
         </a>
+        {% endif %}
       {% endif %}
     </div>
   </div>
@@ -126,6 +135,8 @@
   </div>
 
   <div class="pf-table-wrapper">
+    {% tem_perm 'operacao_diaria.fichas.registrar_chegada' as pode_chegada %}
+    {% tem_perm 'frota.viaturas.visualizar' as pode_ver_viatura %}
     <table class="pf-table">
       <thead>
         <tr>
@@ -136,16 +147,22 @@
           <th>Data/Hora Saída</th>
           <th>Odômetro Saída</th>
           <th>Data Expediente</th>
+          {% if pode_chegada %}
           <th style="text-align: right;">Ação</th>
+          {% endif %}
         </tr>
       </thead>
       <tbody>
         {% for reg in registros_em_aberto %}
           <tr style="background-color: #F8FAFC;">
             <td>
+              {% if pode_ver_viatura %}
               <a href="{% url 'veiculos:detalhe' reg.viatura.pk %}" style="color: var(--pf-blue-500); font-weight: 700; text-decoration: none;">
                 {{ reg.viatura.marca }} {{ reg.viatura.modelo }}
               </a>
+              {% else %}
+              <strong style="color: var(--pf-grey-800);">{{ reg.viatura.marca }} {{ reg.viatura.modelo }}</strong>
+              {% endif %}
             </td>
             <td>
               <span class="pf-badge pf-badge-dark" style="font-family: monospace;">{{ reg.viatura.placa }}</span>
@@ -158,15 +175,17 @@
             </td>
             <td>{{ reg.odometro_saida|stringformat:"d" }} km</td>
             <td>{{ reg.ficha.data_expediente|date:"d/m/Y" }}</td>
+            {% if pode_chegada %}
             <td style="text-align: right;">
               <a href="{% url 'fichas:chegada_concluir' reg.pk %}" class="pf-btn pf-btn-sm pf-btn-success" title="Registrar Chegada da Viatura">
                 <i class="fas fa-sign-in-alt"></i> Registrar Chegada
               </a>
             </td>
+            {% endif %}
           </tr>
         {% empty %}
           <tr>
-            <td colspan="8" style="text-align: center; padding: var(--space-24);">
+            <td colspan="{% if pode_chegada %}8{% else %}7{% endif %}" style="text-align: center; padding: var(--space-24);">
               <i class="fas fa-car" style="font-size: 28px; color: var(--pf-grey-400); margin-bottom: 8px;"></i>
               <p>Nenhuma viatura com registro em aberto no momento. Toda a frota está no pátio ou oficina.</p>
             </td>
@@ -177,6 +196,7 @@
   </div>
 </div>
 {% endif %}
+
 
 <!-- 4. Gráficos Operacionais (KM Rodados e Disponibilidade) -->
 {% if 'grafico_km_7dias' in meus_widgets or 'metricas_frota' in meus_widgets %}
@@ -239,6 +259,8 @@
     </div>
 
     <div class="pf-table-wrapper">
+      {% tem_perm 'frota.manutencao.criar' as pode_criar_manutencao %}
+      {% tem_perm 'frota.viaturas.visualizar' as pode_ver_viatura_alerta %}
       <table class="pf-table">
         <thead>
           <tr>
@@ -248,16 +270,22 @@
             <th>Revisão Limite (KM)</th>
             <th>Data Limite</th>
             <th>Situação do Alerta</th>
+            {% if pode_criar_manutencao %}
             <th style="text-align: right;">Ação</th>
+            {% endif %}
           </tr>
         </thead>
         <tbody>
           {% for item in viaturas_alerta %}
             <tr>
               <td>
+                {% if pode_ver_viatura_alerta %}
                 <a href="{% url 'veiculos:detalhe' item.viatura.pk %}" style="color: var(--pf-blue-500); font-weight: 700; text-decoration: none;">
                   {{ item.viatura.marca }} {{ item.viatura.modelo }}
                 </a>
+                {% else %}
+                <strong style="color: var(--pf-grey-800);">{{ item.viatura.marca }} {{ item.viatura.modelo }}</strong>
+                {% endif %}
                 <div><span class="pf-badge pf-badge-dark" style="font-family: monospace;">{{ item.viatura.placa }}</span></div>
               </td>
               <td>{{ item.viatura.setor_pertencente.sigla }}</td>
@@ -272,15 +300,18 @@
                 {% endif %}
                 <div class="pf-small" style="color: var(--pf-grey-600); margin-top: 2px;">{{ item.alerta.mensagens.0 }}</div>
               </td>
+              {% if pode_criar_manutencao %}
               <td style="text-align: right;">
                 <a href="{% url 'veiculos:manutencao_criar' item.viatura.pk %}" class="pf-btn pf-btn-sm pf-btn-gold">
                   <i class="fas fa-tools"></i> Registrar Serviço
                 </a>
               </td>
+              {% endif %}
             </tr>
           {% endfor %}
         </tbody>
       </table>
+
     </div>
   </div>
 {% endif %}

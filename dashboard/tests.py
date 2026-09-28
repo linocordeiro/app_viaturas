@@ -21,7 +21,7 @@ class DashboardTestCase(TestCase):
             first_name="Operador",
             last_name="Frota",
             matricula="PF77777",
-            perfil=Usuario.PERFIL_RESPONSAVEL,
+            is_superuser=True,
         )
         self.setor = Setor.objects.create(sigla="DREX", nome="Delegacia Regional Executiva")
 
@@ -108,3 +108,63 @@ class DashboardTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         # O último elemento do gráfico (hoje) deve refletir os 150 km
         self.assertEqual(response.context["km_grafico"][-1], 150)
+
+    def test_dashboard_perfil_inteligencia_oculta_botao_chegada(self):
+        """Perfil de inteligência não deve ver o botão nem a coluna de Ação para registrar chegada."""
+        from accesscontrol.models import DashboardWidget, Modulo, Perfil, UsuarioPerfil
+        mod, _ = Modulo.objects.get_or_create(codigo="operacao_diaria", defaults={"nome": "Operação Diária"})
+        wid, _ = DashboardWidget.objects.get_or_create(codigo="viaturas_em_transito", defaults={"nome": "Viaturas em Trânsito", "modulo": mod})
+        perfil_inteligencia, _ = Perfil.objects.get_or_create(
+            nome="Inteligência",
+            defaults={"ativo": True}
+        )
+        perfil_inteligencia.widgets.add(wid)
+
+
+        user_inteligencia = Usuario.objects.create_user(
+            username="agente.inteligencia",
+            password="SenhaForte@PF2026",
+            first_name="Agente",
+            last_name="Inteligência",
+            matricula="PF88888",
+            is_superuser=False,
+        )
+        UsuarioPerfil.objects.create(usuario=user_inteligencia, perfil=perfil_inteligencia, ativo=True)
+
+        # Cria uma viatura em trânsito
+        ficha = FichaControle.objects.create(
+            data_expediente=date.today(),
+            horario_inicio=time(7, 0),
+            horario_termino=time(19, 0),
+            vigilante=self.user,
+            nome_vigilante="Vigilante Teste",
+        )
+        RegistroUso.objects.create(
+            ficha=ficha,
+            viatura=self.v2,
+            condutor="Agente Missão",
+            destino="Operação Especial",
+            data_saida=date.today(),
+            horario_saida=time(10, 0),
+            odometro_saida=20000,
+            status=RegistroUso.STATUS_EM_TRANSITO,
+        )
+
+        self.client.login(username="agente.inteligencia", password="SenhaForte@PF2026")
+        response = self.client.get(reverse("dashboard:home"))
+        self.assertEqual(response.status_code, 200)
+
+        # Deve ver os dados da viatura em trânsito
+        self.assertContains(response, "PF-2222")
+        self.assertContains(response, "Operação Especial")
+
+        # NÃO deve conter o botão nem a coluna de registrar chegada
+        self.assertNotContains(response, "Registrar Chegada")
+        self.assertNotContains(response, '<th style="text-align: right;">Ação</th>')
+
+        # Usuário superuser (com todas as permissões) DEVE ver o botão e a coluna
+        self.client.login(username=self.username, password=self.password)
+        resp_admin = self.client.get(reverse("dashboard:home"))
+        self.assertContains(resp_admin, "Registrar Chegada")
+        self.assertContains(resp_admin, '<th style="text-align: right;">Ação</th>')
+

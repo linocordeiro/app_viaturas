@@ -68,7 +68,16 @@
 </head>
 <body>
 
-  <div class="pf-login-container">
+  <div style="display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 440px;">
+    {% if is_db_desenvolvimento %}
+    <span style="display: block; width: 100%; text-align: center; margin-bottom: 20px;">
+      <h1 style="color: #FF2E2E; font-size: 1.5rem; font-weight: 900; text-transform: uppercase; margin: 0; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(255, 46, 46, 0.6);">
+        BANCO DE DESENVOLVIMENTO
+      </h1>
+    </span>
+    {% endif %}
+
+    <div class="pf-login-container">
     <div class="pf-login-header">
       <img src="{% static 'img/brasao_pf.png' %}" alt="Brasão Polícia Federal" class="pf-login-logo">
       <h1 class="pf-login-title">SR/PF/AC</h1>
@@ -109,6 +118,7 @@
       <div><strong>Acesso Restrito</strong> — Uso exclusivo de servidores e colaboradores autorizados.</div>
       <div style="margin-top: 4px;">NTI/SR/PF/AC</div>
     </div>
+  </div>
   </div>
 
 </body>

@@ -18,7 +18,6 @@ class UsuariosAuthTestCase(TestCase):
             first_name="Agente",
             last_name="Federal",
             matricula="PF12345",
-            perfil=Usuario.PERFIL_VIGILANTE,
         )
 
     def test_login_sucesso(self):
@@ -57,8 +56,31 @@ class UsuariosAuthTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse("usuarios:login"))
 
-    def test_usuario_form_validacao_senha_obrigatoria_novo_usuario(self):
-        """Novo usuário requer senha provisória."""
+    def test_usuario_form_senha_padrao_mudar123(self):
+        """Novo usuário cadastrado sem preencher senha recebe a senha padrão mudar@123."""
+        from accesscontrol.models import Perfil
+        perfil, _ = Perfil.objects.get_or_create(nome="Vigilante", defaults={"ativo": True})
+        form = UsuarioForm(
+            data={
+                "username": "novo.vigilante",
+                "first_name": "Novo",
+                "last_name": "Vigilante",
+                "matricula": "PF99999",
+                "cargo": "Vigilante",
+                "setor": "Portaria",
+                "perfis": [perfil.pk],
+                "is_active": True,
+                "password": "",
+            }
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        novo_user = form.save()
+        self.assertTrue(novo_user.check_password("mudar@123"))
+
+    def test_usuario_form_validacao_senha_muito_curta(self):
+        """Senha informada menor que 6 caracteres deve falhar na validação."""
+        from accesscontrol.models import Perfil
+        perfil, _ = Perfil.objects.get_or_create(nome="Vigilante", defaults={"ativo": True})
         form = UsuarioForm(
             data={
                 "username": "novo.agente",
@@ -67,28 +89,31 @@ class UsuariosAuthTestCase(TestCase):
                 "matricula": "PF99999",
                 "cargo": "Agente",
                 "setor": "DREX",
-                "perfil": Usuario.PERFIL_VIGILANTE,
+                "perfis": [perfil.pk],
                 "is_active": True,
-                "password": "",
+                "password": "123",  # Menos de 6 caracteres
             }
         )
         self.assertFalse(form.is_valid())
         self.assertIn("password", form.errors)
 
-    def test_usuario_form_validacao_senha_muito_curta(self):
-        """Senha que viola validadores padrão do Django deve falhar."""
-        form = UsuarioForm(
-            data={
-                "username": "novo.agente",
-                "first_name": "Novo",
-                "last_name": "Agente",
-                "matricula": "PF99999",
-                "cargo": "Agente",
-                "setor": "DREX",
-                "perfil": Usuario.PERFIL_VIGILANTE,
-                "is_active": True,
-                "password": "123",  # Muito curta (menos de 8 caracteres)
-            }
+    def test_usuario_resetar_senha(self):
+        """Garante que a ação de resetar senha define a senha do usuário para mudar@123."""
+        self.user.is_superuser = True
+        self.user.save()
+
+        outro_usuario = Usuario.objects.create_user(
+            username="usuario.alvo",
+            password="SenhaAntiga@123",
+            first_name="Alvo",
+            last_name="Reset",
         )
-        self.assertFalse(form.is_valid())
-        self.assertIn("password", form.errors)
+
+        self.client.login(username=self.username, password=self.password)
+        url = reverse("usuarios:resetar_senha", kwargs={"pk": outro_usuario.pk})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 302)
+
+        outro_usuario.refresh_from_db()
+        self.assertTrue(outro_usuario.check_password("mudar@123"))
+

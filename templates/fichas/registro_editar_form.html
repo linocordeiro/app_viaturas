@@ -66,12 +66,18 @@
       </div>
     </div>
 
-    {% if bloquear_saida %}
-      <div style="background-color: #f8f9fa; border-left: 4px solid #6c757d; padding: 12px; margin-bottom: 16px; border-radius: 4px; color: #495057; font-size: 14px;">
+    {% if registro.registro_saida_origem %}
+      <div style="background-color: #EFF6FF; border-left: 4px solid #2563EB; padding: 12px 16px; margin-bottom: 16px; border-radius: 4px; color: #1E40AF; font-size: 14px;">
+        <i class="fas fa-info-circle" style="color: #2563EB; margin-right: 8px;"></i>
+        <strong>Saída Registrada em Outro Expediente:</strong> A saída desta viatura ocorreu na <strong>Ficha de {{ registro.registro_saida_origem.ficha.data_expediente|date:"d/m/Y" }}</strong>. Os dados de saída exibidos abaixo são protegidos e apresentados apenas para consulta.
+      </div>
+    {% elif bloquear_saida %}
+      <div style="background-color: #f8f9fa; border-left: 4px solid #6c757d; padding: 12px 16px; margin-bottom: 16px; border-radius: 4px; color: #495057; font-size: 14px;">
         <i class="fas fa-lock" style="color: #6c757d; margin-right: 8px;"></i>
         <strong>Campos Protegidos:</strong> Os dados de saída não podem ser alterados pois pertencem a uma ficha ou turno anterior.
       </div>
     {% endif %}
+
 
     <div class="pf-form-grid">
       <div class="col-6">

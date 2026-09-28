@@ -67,7 +67,7 @@ def gerar_excel_ficha(ficha: "FichaControle") -> bytes:
     ws["F4"] = ficha.horario_termino.strftime("%H:%M")
 
     ws["A5"] = "Vigilante do Dia:"
-    ws["B5"] = ficha.nome_vigilante
+    ws["B5"] = f"{ficha.nome_vigilante} (ASSINADO)" if ficha.assinatura_vigilante else ficha.nome_vigilante
     ws["C5"] = "Status da Ficha:"
     ws["D5"] = ficha.get_status_display()
     ws["E5"] = "Visto Responsável:"
@@ -97,8 +97,22 @@ def gerar_excel_ficha(ficha: "FichaControle") -> bytes:
 
     current_row = start_row + 1
     for reg in ficha.registros.all():
-        saida_str = f"{reg.horario_saida.strftime('%H:%M')} ({reg.odometro_saida:,} km)"
-        chegada_str = f"{reg.horario_chegada.strftime('%H:%M')} ({reg.odometro_chegada:,} km)" if reg.horario_chegada and reg.odometro_chegada else "EM TRÂNSITO"
+        if reg.horario_saida:
+            saida_str = f"{reg.horario_saida.strftime('%H:%M')} ({reg.odometro_saida:,} km)"
+        elif reg.registro_saida_origem:
+            origem_data = reg.registro_saida_origem.ficha.data_expediente.strftime('%d/%m/%Y')
+            km_efetivo = reg.odometro_saida_efetivo or 0
+            saida_str = f"Ficha {origem_data} ({km_efetivo:,} km*)"
+        else:
+            saida_str = "Entrada Avulsa"
+
+        if reg.horario_chegada and reg.odometro_chegada:
+            chegada_str = f"{reg.horario_chegada.strftime('%H:%M')} ({reg.odometro_chegada:,} km)"
+        elif ficha.status == "ENCERRADA":
+            chegada_str = "RETORNO EM OUTRO PLANTÃO"
+        else:
+            chegada_str = "EM TRÂNSITO"
+
         km_str = reg.km_percorrido if reg.odometro_chegada else 0
         avaria_str = "SIM" if reg.possui_avarias else "NÃO"
 

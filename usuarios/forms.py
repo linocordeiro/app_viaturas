@@ -25,19 +25,22 @@ class LoginForm(AuthenticationForm):
 
 class UsuarioForm(forms.ModelForm):
     password = forms.CharField(
-        label="Senha Provisória",
+        label="Senha de Acesso",
         required=False,
         widget=forms.PasswordInput(attrs={
             "class": "pf-input",
-            "placeholder": "Obrigatória apenas para novos usuários",
+            "placeholder": "Padrão: mudar@123",
         }),
-        help_text="Mínimo de 6 caracteres",
+        help_text="Senha padrão inicial: mudar@123 (mínimo de 6 caracteres)",
     )
 
     # Campo para atribuição de perfis ao salvar o usuário
     # Lazy import para evitar dependência circular durante migrações
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.initial["password"] = "mudar@123"
+
         try:
             from accesscontrol.models import Perfil
 
@@ -78,17 +81,35 @@ class UsuarioForm(forms.ModelForm):
 
     def clean_password(self):
         password = self.cleaned_data.get("password")
-        if not self.instance.pk and not password:
-            msg = "É obrigatório informar uma senha provisória para novos usuários."
-            raise forms.ValidationError(msg)
+        if not self.instance.pk:
+            # Novos usuários sempre recebem mudar@123 por padrão se não informado outro valor
+            if password:
+                if len(password) < 6:
+                    raise forms.ValidationError("A senha provisória deve conter no mínimo 6 caracteres.")
+            return password or "mudar@123"
+
         if password:
-            validate_password(password, user=self.instance)
+            if len(password) < 6:
+                raise forms.ValidationError("A senha provisória deve conter no mínimo 6 caracteres.")
+            try:
+                validate_password(password, user=self.instance)
+            except forms.ValidationError as e:
+                errors = list(e.messages)
+                outros_erros = [
+                    err for err in errors
+                    if "parecida" not in err.lower() and "similar" not in err.lower()
+                ]
+                if outros_erros:
+                    raise forms.ValidationError(outros_erros)
         return password
 
     def save(self, commit=True):
         user = super().save(commit=False)
         password = self.cleaned_data.get("password")
-        if password:
+        if not user.pk:
+            # Usuários recém cadastrados recebem a senha padrão mudar@123
+            user.set_password(password or "mudar@123")
+        elif password:
             user.set_password(password)
         if commit:
             user.save()

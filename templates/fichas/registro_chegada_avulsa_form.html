@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Retorno de Viatura{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <a href="{% url 'fichas:lista' %}">Fichas de Controle</a>
+  <span>/</span>
+  <a href="{% url 'fichas:detalhe' ficha.pk %}">{{ ficha.data_expediente|date:"d/m/Y" }}</a>
+  <span>/</span>
+  <strong>Registrar Retorno</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2>Registrar Retorno de Viatura ao Pátio</h2>
+    <p>Ficha de Destino: <strong>{{ ficha.data_expediente|date:"d/m/Y" }}</strong> • Horário: {{ ficha.horario_inicio|time:"H:i" }} às {{ ficha.horario_termino|time:"H:i" }}</p>
+  </div>
+  <div>
+    <a href="{% url 'fichas:detalhe' ficha.pk %}" class="pf-btn pf-btn-secondary">
+      <i class="fas fa-arrow-left"></i> Voltar à Ficha
+    </a>
+  </div>
+</div>
+
+<div class="pf-alert pf-alert-info" style="margin-bottom: var(--space-20);">
+  <i class="fas fa-info-circle" style="font-size: 20px;"></i>
+  <div>
+    <strong>REGISTRO DE RETORNO / ENTRADA</strong>
+    <div>
+      Utilize este formulário para lançar a chegada de qualquer viatura que esteja em trânsito (na rua), quer a saída tenha sido lançada neste plantão ou em fichas de dias/turnos anteriores.
+    </div>
+  </div>
+</div>
+
+<div class="pf-card">
+  <form method="post" id="formRetorno">
+    {% csrf_token %}
+    {{ form.registro_saida_origem }}
+
+    <div class="pf-card-header">
+      <div class="pf-card-title">
+        <i class="fas fa-car-side"></i> 1. Seleção da Viatura em Trânsito
+      </div>
+    </div>
+
+    <div class="pf-form-grid">
+      <div class="col-12">
+        <div class="pf-field">
+          <label for="{{ form.viatura.id_for_label }}" class="required">{{ form.viatura.label }}</label>
+          {{ form.viatura }}
+          <small class="pf-small">Selecione o veículo que está retornando ao pátio.</small>
+          {% if form.viatura.errors %}<div class="pf-error-text">{{ form.viatura.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Painel dinâmico da saída original -->
+    <div id="painelSaidaOrigem" style="display: none; background-color: var(--pf-grey-100); border: 1px solid var(--pf-grey-300); border-radius: 6px; padding: var(--space-16); margin: var(--space-16) 0;">
+      <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--pf-blue-500); margin-bottom: 8px;">
+        <i class="fas fa-history"></i> Dados da Saída Original do Veículo
+      </div>
+      <div class="pf-form-grid">
+        <div class="col-3">
+          <small class="pf-small">Origem do Lançamento</small>
+          <div id="infoFichaOrigem" style="font-weight: 700;">-</div>
+        </div>
+        <div class="col-3">
+          <small class="pf-small">Data/Hora de Saída</small>
+          <div id="infoDataHoraSaida" style="font-weight: 700;">-</div>
+        </div>
+        <div class="col-3">
+          <small class="pf-small">Odômetro na Saída</small>
+          <div id="infoKmSaida" style="font-weight: 700; color: var(--pf-blue-500);">-</div>
+        </div>
+        <div class="col-3">
+          <small class="pf-small">Condutor na Saída</small>
+          <div id="infoCondutorSaida" style="font-weight: 700;">-</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pf-card-header" style="margin-top: var(--space-20);">
+      <div class="pf-card-title">
+        <i class="fas fa-sign-in-alt"></i> 2. Dados de Retorno e Fiscalização
+      </div>
+    </div>
+
+    <div class="pf-form-grid">
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.data_chegada.id_for_label }}" class="required">{{ form.data_chegada.label }}</label>
+          {{ form.data_chegada }}
+          {% if form.data_chegada.errors %}<div class="pf-error-text">{{ form.data_chegada.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.horario_chegada.id_for_label }}" class="required">{{ form.horario_chegada.label }}</label>
+          {{ form.horario_chegada }}
+          {% if form.horario_chegada.errors %}<div class="pf-error-text">{{ form.horario_chegada.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-4">
+        <div class="pf-field">
+          <label for="{{ form.odometro_chegada.id_for_label }}" class="required">{{ form.odometro_chegada.label }}</label>
+          {{ form.odometro_chegada }}
+          <small class="pf-small" id="ajudaOdometro">Deve ser igual ou superior ao odômetro de saída.</small>
+          {% if form.odometro_chegada.errors %}<div class="pf-error-text">{{ form.odometro_chegada.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Estimativa de KM percorrido ao vivo -->
+      <div class="col-12" id="boxKmEstimado" style="display: none;">
+        <div style="background-color: #E8F4FD; border: 1px solid #B8DAFF; padding: 10px 16px; border-radius: 4px; display: flex; align-items: center; justify-content: space-between;">
+          <span>Distância percorrida calculada:</span>
+          <strong id="valKmEstimado" style="font-size: 16px; color: var(--pf-blue-500);">0 km</strong>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="pf-field">
+          <label for="{{ form.condutor.id_for_label }}">{{ form.condutor.label }}</label>
+          {{ form.condutor }}
+          <small class="pf-small">Opcional: preenchido automaticamente com o condutor que realizou a saída.</small>
+          {% if form.condutor.errors %}<div class="pf-error-text">{{ form.condutor.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="pf-field">
+          <label for="{{ form.destino.id_for_label }}">{{ form.destino.label }}</label>
+          {{ form.destino }}
+          <small class="pf-small">Destino ou missão realizada durante o percurso.</small>
+          {% if form.destino.errors %}<div class="pf-error-text">{{ form.destino.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="col-12" style="margin-top: var(--space-8);">
+        <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; color: var(--pf-red-700);">
+          {{ form.possui_avarias }}
+          <span>O veículo possui avarias encontradas no retorno?</span>
+        </label>
+        <small class="pf-small">Marque caso haja amassados, riscos, problemas mecânicos ou avarias relatadas.</small>
+      </div>
+
+      <div class="col-12" id="blocoAvarias" style="margin-top: var(--space-8); display: none;">
+        <div class="pf-field">
+          <label for="{{ form.avarias_encontradas.id_for_label }}"><strong>{{ form.avarias_encontradas.label }}</strong></label>
+          {{ form.avarias_encontradas }}
+          <small class="pf-small">{{ form.avarias_encontradas.help_text }}</small>
+          {% if form.avarias_encontradas.errors %}<div class="pf-error-text">{{ form.avarias_encontradas.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: var(--space-8); margin-top: var(--space-24); border-top: 1px solid var(--pf-grey-200); padding-top: var(--space-16);">
+      <a href="{% url 'fichas:detalhe' ficha.pk %}" class="pf-btn pf-btn-ghost">Cancelar</a>
+      <button type="submit" class="pf-btn pf-btn-primary">
+        <i class="fas fa-check"></i> Registrar Retorno da Viatura
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var viaturasMap = {{ viaturas_map|safe }};
+    var selectViatura = document.getElementById("{{ form.viatura.id_for_label }}");
+    var inputSaidaOrigem = document.getElementById("{{ form.registro_saida_origem.id_for_label }}");
+    var inputOdometro = document.getElementById("{{ form.odometro_chegada.id_for_label }}");
+    var inputCondutor = document.getElementById("{{ form.condutor.id_for_label }}");
+    var inputDestino = document.getElementById("{{ form.destino.id_for_label }}");
+    var chkAvarias = document.getElementById("{{ form.possui_avarias.id_for_label }}");
+    var blocoAvarias = document.getElementById("blocoAvarias");
+
+    var painelSaida = document.getElementById("painelSaidaOrigem");
+    var infoFichaOrigem = document.getElementById("infoFichaOrigem");
+    var infoDataHoraSaida = document.getElementById("infoDataHoraSaida");
+    var infoKmSaida = document.getElementById("infoKmSaida");
+    var infoCondutorSaida = document.getElementById("infoCondutorSaida");
+    var ajudaOdometro = document.getElementById("ajudaOdometro");
+    var boxKmEstimado = document.getElementById("boxKmEstimado");
+    var valKmEstimado = document.getElementById("valKmEstimado");
+
+    var currentKmSaida = 0;
+
+    function atualizarViatura() {
+      var vId = selectViatura ? selectViatura.value : "";
+      if (vId && viaturasMap[vId]) {
+        var dados = viaturasMap[vId];
+        currentKmSaida = dados.km_saida || 0;
+
+        if (inputSaidaOrigem) {
+          inputSaidaOrigem.value = dados.saida_id || "";
+        }
+
+        if (painelSaida) {
+          painelSaida.style.display = "block";
+          infoFichaOrigem.textContent = dados.ficha_origem || "Plantão anterior";
+          infoDataHoraSaida.textContent = (dados.data_saida && dados.horario_saida) ? (dados.data_saida + " às " + dados.horario_saida) : "-";
+          infoKmSaida.textContent = currentKmSaida.toLocaleString("pt-BR") + " KM";
+          infoCondutorSaida.textContent = dados.condutor || "-";
+        }
+
+        if (ajudaOdometro) {
+          ajudaOdometro.textContent = "Deve ser igual ou superior a " + currentKmSaida.toLocaleString("pt-BR") + " KM.";
+        }
+
+        if (inputOdometro && !inputOdometro.value) {
+          inputOdometro.value = currentKmSaida;
+        }
+
+        if (inputCondutor && dados.condutor && !inputCondutor.value) {
+          inputCondutor.value = dados.condutor;
+        }
+
+        if (inputDestino && dados.destino && !inputDestino.value) {
+          inputDestino.value = dados.destino;
+        }
+
+        atualizarKmCalculado();
+      } else {
+        if (painelSaida) painelSaida.style.display = "none";
+        if (boxKmEstimado) boxKmEstimado.style.display = "none";
+      }
+    }
+
+    function atualizarKmCalculado() {
+      if (!inputOdometro || !boxKmEstimado) return;
+      var kmChegada = parseInt(inputOdometro.value, 10);
+      if (!isNaN(kmChegada) && currentKmSaida > 0 && kmChegada >= currentKmSaida) {
+        var diff = kmChegada - currentKmSaida;
+        valKmEstimado.textContent = diff.toLocaleString("pt-BR") + " KM";
+        boxKmEstimado.style.display = "block";
+      } else {
+        boxKmEstimado.style.display = "none";
+      }
+    }
+
+    if (selectViatura) {
+      selectViatura.addEventListener("change", atualizarViatura);
+      // Se já houver viatura selecionada (ex: vindo de GET)
+      if (selectViatura.value) {
+        atualizarViatura();
+      }
+    }
+
+    if (inputOdometro) {
+      inputOdometro.addEventListener("input", atualizarKmCalculado);
+    }
+
+    function toggleAvarias() {
+      if (chkAvarias && blocoAvarias) {
+        blocoAvarias.style.display = chkAvarias.checked ? "block" : "none";
+      }
+    }
+
+    if (chkAvarias) {
+      chkAvarias.addEventListener("change", toggleAvarias);
+      toggleAvarias();
+    }
+  });
+</script>
+{% endblock %}

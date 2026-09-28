@@ -31,9 +31,10 @@
     {% endif %}
 
     {% if ficha.pode_editar %}
-      <a href="{% url 'fichas:saida_criar' ficha.pk %}" class="pf-btn pf-btn-gold">
-        <i class="fas fa-key"></i> Registrar Saída de Viatura
+      <a href="{% url 'fichas:movimentacao_criar' ficha.pk %}" class="pf-btn pf-btn-primary" style="font-weight: 600;" title="Registrar Saída ou Retorno de Viatura ao Pátio">
+        <i class="fas fa-exchange-alt"></i> Registrar Movimentação
       </a>
+
       
       {% tem_perm "operacao_diaria.fichas.encerrar" as pode_encerrar %}
       {% if pode_encerrar %}
@@ -130,6 +131,8 @@
     </div>
     <div>
       <span class="pf-badge pf-badge-dark">{{ registros.count }} movimentação(ões)</span>
+      <span class="pf-badge pf-badge-secondary">{{ total_saidas }} saída(s)</span>
+      <span class="pf-badge pf-badge-secondary">{{ total_chegadas }} retorno(s)</span>
       {% if em_transito > 0 %}
         <span class="pf-badge pf-badge-warning">{{ em_transito }} viatura(s) na rua</span>
       {% endif %}
@@ -170,14 +173,36 @@
             <td><strong>{{ reg.condutor }}</strong></td>
             <td>{{ reg.destino }}</td>
             <td>
-              <div class="pf-small" style="color: var(--pf-grey-500);">{{ reg.data_saida|date:"d/m/Y" }}</div>
-              <strong>{{ reg.horario_saida|time:"H:i" }}</strong>
+              {% if reg.horario_saida %}
+                <div class="pf-small" style="color: var(--pf-grey-500);">{{ reg.data_saida|date:"d/m/Y" }}</div>
+                <strong>{{ reg.horario_saida|time:"H:i" }}</strong>
+              {% elif reg.registro_saida_origem %}
+                <div class="pf-badge pf-badge-info" style="font-size: 11px; padding: 4px 8px; display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px;" title="Saída registrada na ficha de {{ reg.registro_saida_origem.ficha.data_expediente|date:'d/m/Y' }} às {{ reg.registro_saida_origem.horario_saida|time:'H:i' }}">
+                  <span><i class="fas fa-history"></i> Ficha {{ reg.registro_saida_origem.ficha.data_expediente|date:"d/m/Y" }}</span>
+                  <strong style="font-size: 12px; letter-spacing: 0.5px;">{{ reg.registro_saida_origem.horario_saida|time:"H:i" }}</strong>
+                </div>
+              {% else %}
+
+                <span class="pf-badge pf-badge-secondary">Entrada Avulsa</span>
+              {% endif %}
             </td>
-            <td>{{ reg.odometro_saida|stringformat:"d" }} km</td>
+            <td>
+              {% if reg.odometro_saida %}
+                {{ reg.odometro_saida|stringformat:"d" }} km
+              {% elif reg.odometro_saida_efetivo %}
+                <span title="Odômetro na saída anterior">{{ reg.odometro_saida_efetivo|stringformat:"d" }} km*</span>
+              {% else %}
+                -
+              {% endif %}
+            </td>
             <td>
               {% if reg.horario_chegada %}
                 <div class="pf-small" style="color: var(--pf-grey-500);">{{ reg.data_chegada|date:"d/m/Y" }}</div>
                 <strong>{{ reg.horario_chegada|time:"H:i" }}</strong>
+              {% elif ficha.status == 'ENCERRADA' %}
+                <span class="pf-badge pf-badge-warning" title="Viatura não retornou durante este plantão. O retorno será lançado em outra ficha.">
+                  <i class="fas fa-clock"></i> Retorno em outro plantão
+                </span>
               {% else %}
                 <span class="pf-badge pf-badge-info"><i class="fas fa-road"></i> Em Trânsito</span>
               {% endif %}
@@ -256,11 +281,32 @@
     <div class="col-4">
       <div style="background: var(--pf-grey-100); border: 1px solid var(--pf-grey-200); border-radius: 4px; padding: var(--space-16); text-align: center; height: 100%;">
         <div style="font-size: 12px; font-weight: 700; color: var(--pf-grey-600); letter-spacing: 0.5px;">VIGILANTE DO DIA</div>
-        <div style="font-size: 15px; font-weight: 700; margin: 12px 0 4px;">{{ ficha.nome_vigilante }}</div>
-        <div class="pf-small" style="color: var(--pf-grey-600);">Responsável pelo preenchimento da ficha</div>
-        <div style="margin-top: var(--space-16); padding-top: var(--space-12); border-top: 1px dashed var(--pf-grey-300);">
-          <span class="pf-badge pf-badge-success"><i class="fas fa-check-circle"></i> Assinatura Lançada</span>
-        </div>
+
+        {% if ficha.assinatura_vigilante %}
+          <div style="font-size: 15px; font-weight: 700; margin: 12px 0 4px; color: var(--pf-blue-500);">
+            {{ ficha.vigilante_assinatura_usuario.get_full_name|default:ficha.vigilante_assinatura_usuario.username|default:ficha.nome_vigilante }}
+          </div>
+          <div class="pf-small" style="color: var(--pf-grey-600);">Assinado eletronicamente em {{ ficha.data_assinatura_vigilante|date:"d/m/Y H:i" }}</div>
+          <div style="margin-top: var(--space-16); padding-top: var(--space-12); border-top: 1px dashed var(--pf-grey-300);">
+            <span class="pf-badge pf-badge-success"><i class="fas fa-check-circle"></i> Assinatura Lançada</span>
+          </div>
+        {% else %}
+          <div style="font-size: 15px; font-weight: 700; margin: 12px 0 4px;">{{ ficha.nome_vigilante }}</div>
+          <div class="pf-small" style="color: var(--pf-grey-600);">Responsável pelo preenchimento da ficha</div>
+          <div style="margin-top: var(--space-16); padding-top: var(--space-12); border-top: 1px dashed var(--pf-grey-300);">
+            {% tem_perm 'operacao_diaria.fichas.assinar_vigilante' as pode_assinar_vigilante %}
+            {% if pode_assinar_vigilante and ficha.pode_editar %}
+              <form method="post" action="{% url 'fichas:assinar_vigilante' ficha.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="pf-btn pf-btn-sm pf-btn-primary">
+                  <i class="fas fa-signature"></i> Assinar Ficha
+                </button>
+              </form>
+            {% else %}
+              <span class="pf-badge pf-badge-warning">Assinatura Pendente</span>
+            {% endif %}
+          </div>
+        {% endif %}
       </div>
     </div>
 
@@ -280,7 +326,8 @@
         {% else %}
           <div style="margin: 16px 0; color: var(--pf-grey-500); font-style: italic;">Visto pendente de homologação</div>
           <div style="margin-top: var(--space-16); padding-top: var(--space-12); border-top: 1px dashed var(--pf-grey-300);">
-            {% if user.is_responsavel_viaturas or user.is_superuser %}
+            {% tem_perm 'operacao_diaria.fichas.apor_visto_nutran' as pode_visto_nutran %}
+            {% if pode_visto_nutran %}
               <form method="post" action="{% url 'fichas:assinar_responsavel' ficha.pk %}">
                 {% csrf_token %}
                 <button type="submit" class="pf-btn pf-btn-sm pf-btn-gold">
@@ -311,7 +358,8 @@
         {% else %}
           <div style="margin: 16px 0; color: var(--pf-grey-500); font-style: italic;">Visto pendente de homologação</div>
           <div style="margin-top: var(--space-16); padding-top: var(--space-12); border-top: 1px dashed var(--pf-grey-300);">
-            {% if user.is_chefia or user.is_superuser %}
+            {% tem_perm 'operacao_diaria.fichas.apor_visto_chefia' as pode_visto_chefia %}
+            {% if pode_visto_chefia %}
               <form method="post" action="{% url 'fichas:assinar_chefia' ficha.pk %}">
                 {% csrf_token %}
                 <button type="submit" class="pf-btn pf-btn-sm pf-btn-primary">

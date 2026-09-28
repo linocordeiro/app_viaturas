@@ -34,6 +34,14 @@
       </div>
     </a>
 
+    {% if is_db_desenvolvimento %}
+    <span style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; z-index: 10;">
+      <h1 style="color: #FF2E2E; font-size: 1.5rem; font-weight: 900; text-transform: uppercase; margin: 0; letter-spacing: 2px; text-shadow: 0 2px 8px rgba(255, 46, 46, 0.4); white-space: nowrap;">
+        BANCO DE DESENVOLVIMENTO
+      </h1>
+    </span>
+    {% endif %}
+
     <div class="pf-header-actions">
       {% if user.is_authenticated %}
         <div class="pf-user-profile">

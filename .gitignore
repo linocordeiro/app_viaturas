@@ -8,6 +8,10 @@ __pycache__/
 .env.*
 !.env.example
 
+# SQLite Databases
+*.sqlite3
+database/*.sqlite3
+
 
 # C extensions
 *.so

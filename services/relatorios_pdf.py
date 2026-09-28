@@ -135,21 +135,44 @@ def gerar_pdf_ficha(ficha: "FichaControle") -> bytes:
     elements.append(Spacer(1, 10))
 
     # Tabela de Movimentações
+    th_style = ParagraphStyle(
+        "TableHeaderWhiteFicha",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=11,
+        textColor=colors.white,
+    )
+
     headers = [
-        Paragraph("<b>Viatura / Placa</b>", styles["Normal"]),
-        Paragraph("<b>Condutor</b>", styles["Normal"]),
-        Paragraph("<b>Destino / Missão</b>", styles["Normal"]),
-        Paragraph("<b>Saída (H/KM)</b>", styles["Normal"]),
-        Paragraph("<b>Chegada (H/KM)</b>", styles["Normal"]),
-        Paragraph("<b>KM Perc.</b>", styles["Normal"]),
-        Paragraph("<b>Avarias / Obs</b>", styles["Normal"]),
+        Paragraph("<b>Viatura / Placa</b>", th_style),
+        Paragraph("<b>Condutor</b>", th_style),
+        Paragraph("<b>Destino / Missão</b>", th_style),
+        Paragraph("<b>Saída (H/KM)</b>", th_style),
+        Paragraph("<b>Chegada (H/KM)</b>", th_style),
+        Paragraph("<b>KM Perc.</b>", th_style),
+        Paragraph("<b>Avarias / Obs</b>", th_style),
     ]
 
     tabela_data = [headers]
 
     for reg in ficha.registros.all():
-        saida_txt = f"{reg.horario_saida.strftime('%H:%M')}<br/>{reg.odometro_saida:,} km"
-        chegada_txt = f"{reg.horario_chegada.strftime('%H:%M')}<br/>{reg.odometro_chegada:,} km" if reg.horario_chegada and reg.odometro_chegada else "EM TRÂNSITO"
+        if reg.horario_saida:
+            saida_txt = f"{reg.horario_saida.strftime('%H:%M')}<br/>{reg.odometro_saida:,} km"
+        elif reg.registro_saida_origem:
+            origem_data = reg.registro_saida_origem.ficha.data_expediente.strftime('%d/%m/%Y')
+            km_saida_efetivo = reg.odometro_saida_efetivo or 0
+            saida_txt = f"Ficha {origem_data}<br/>{km_saida_efetivo:,} km*"
+        else:
+            saida_txt = "Entrada Avulsa"
+
+        if reg.horario_chegada and reg.odometro_chegada:
+            chegada_txt = f"{reg.horario_chegada.strftime('%H:%M')}<br/>{reg.odometro_chegada:,} km"
+        elif ficha.status == "ENCERRADA":
+            chegada_txt = "RETORNO EM<br/>OUTRO PLANTÃO"
+        else:
+            chegada_txt = "EM TRÂNSITO"
+
         km_txt = f"{reg.km_percorrido:,} km" if reg.odometro_chegada else "-"
         avarias_txt = f"<b>SIM:</b> {reg.avarias_encontradas}" if reg.possui_avarias else "Não"
 
@@ -194,7 +217,14 @@ def gerar_pdf_ficha(ficha: "FichaControle") -> bytes:
         visto_chefia_txt += "<br/>___________________________<br/>Assinatura / Visto"
 
     vigilante_txt = f"<b>VIGILANTE DO DIA:</b><br/>{ficha.nome_vigilante}<br/>"
-    vigilante_txt += "<br/>___________________________<br/>Assinatura"
+    if ficha.assinatura_vigilante and ficha.vigilante_assinatura_usuario:
+        vigilante_txt += f"Assinado digitalmente por {ficha.vigilante_assinatura_usuario.get_full_name() or ficha.vigilante_assinatura_usuario.username}<br/>"
+        vigilante_txt += f"Data: {ficha.data_assinatura_vigilante.strftime('%d/%m/%Y %H:%M') if ficha.data_assinatura_vigilante else '-'}"
+    elif ficha.assinatura_vigilante:
+        vigilante_txt += "Assinado digitalmente<br/>"
+        vigilante_txt += f"Data: {ficha.data_assinatura_vigilante.strftime('%d/%m/%Y %H:%M') if ficha.data_assinatura_vigilante else '-'}"
+    else:
+        vigilante_txt += "<br/>___________________________<br/>Assinatura"
 
     assinaturas_data = [
         [
@@ -239,15 +269,24 @@ def gerar_pdf_viaturas(viaturas: Iterable["Viatura"]) -> bytes:
     elements.append(cabecalho_institucional("RELATÓRIO GERAL DA FROTA DE VIATURAS"))
     elements.append(HRFlowable(width="100%", thickness=1.5, color=PF_GOLD, spaceBefore=6, spaceAfter=10))
 
+    th_style = ParagraphStyle(
+        "TableHeaderWhiteViaturas",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=11,
+        textColor=colors.white,
+    )
+
     headers = [
-        Paragraph("<b>Viatura</b>", styles["Normal"]),
-        Paragraph("<b>Placa</b>", styles["Normal"]),
-        Paragraph("<b>Tipo</b>", styles["Normal"]),
-        Paragraph("<b>Setor Pertencente</b>", styles["Normal"]),
-        Paragraph("<b>Responsável</b>", styles["Normal"]),
-        Paragraph("<b>Odômetro Atual</b>", styles["Normal"]),
-        Paragraph("<b>Próx. Revisão (KM/Data)</b>", styles["Normal"]),
-        Paragraph("<b>Estado</b>", styles["Normal"]),
+        Paragraph("<b>Viatura</b>", th_style),
+        Paragraph("<b>Placa</b>", th_style),
+        Paragraph("<b>Tipo</b>", th_style),
+        Paragraph("<b>Setor Pertencente</b>", th_style),
+        Paragraph("<b>Responsável</b>", th_style),
+        Paragraph("<b>Odômetro Atual</b>", th_style),
+        Paragraph("<b>Próx. Revisão (KM/Data)</b>", th_style),
+        Paragraph("<b>Estado</b>", th_style),
     ]
 
     tabela_data = [headers]
@@ -330,13 +369,22 @@ def gerar_pdf_manutencoes_viatura(
     elements.append(t_ficha)
     elements.append(Spacer(1, 15))
 
+    th_style = ParagraphStyle(
+        "TableHeaderWhiteManut",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=11,
+        textColor=colors.white,
+    )
+
     headers = [
-        Paragraph("<b>Data</b>", styles["Normal"]),
-        Paragraph("<b>Tipo</b>", styles["Normal"]),
-        Paragraph("<b>Odômetro</b>", styles["Normal"]),
-        Paragraph("<b>Oficina / OS</b>", styles["Normal"]),
-        Paragraph("<b>Descrição / Peças</b>", styles["Normal"]),
-        Paragraph("<b>Valor (R$)</b>", styles["Normal"]),
+        Paragraph("<b>Data</b>", th_style),
+        Paragraph("<b>Tipo</b>", th_style),
+        Paragraph("<b>Odômetro</b>", th_style),
+        Paragraph("<b>Oficina / OS</b>", th_style),
+        Paragraph("<b>Descrição / Peças</b>", th_style),
+        Paragraph("<b>Valor (R$)</b>", th_style),
     ]
 
     tabela_data = [headers]

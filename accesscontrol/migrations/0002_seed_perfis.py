@@ -110,24 +110,28 @@ def criar_estrutura(apps, schema_editor):
     # ── 4. Migrar usuários existentes do campo legado para UsuarioPerfil ──────
     # Na migration usamos valores_list para acessar o campo que ainda existe no banco
     # (a migration 0002_remove_perfil_field só roda depois desta)
-    for usuario in Usuario.objects.all():
-        perfil_legado = getattr(usuario, "perfil", None)
-        if not perfil_legado:
-            continue
+    try:
+        for usuario in Usuario.objects.all():
+            perfil_legado = getattr(usuario, "perfil", None)
+            if not perfil_legado:
+                continue
 
-        nome_novo_perfil = PERFIL_LEGADO_MAP.get(perfil_legado)
-        if not nome_novo_perfil:
-            continue
+            nome_novo_perfil = PERFIL_LEGADO_MAP.get(perfil_legado)
+            if not nome_novo_perfil:
+                continue
 
-        try:
-            perfil_obj = Perfil.objects.get(nome=nome_novo_perfil)
-            UsuarioPerfil.objects.get_or_create(
-                usuario=usuario,
-                perfil=perfil_obj,
-                defaults={"ativo": True},
-            )
-        except Perfil.DoesNotExist:
-            pass
+            try:
+                perfil_obj = Perfil.objects.get(nome=nome_novo_perfil)
+                UsuarioPerfil.objects.get_or_create(
+                    usuario=usuario,
+                    perfil=perfil_obj,
+                    defaults={"ativo": True},
+                )
+            except Perfil.DoesNotExist:
+                pass
+    except Exception:
+        # Se o campo legado 'perfil' não existir no banco (ex: testes rodando migrations do zero), ignora
+        pass
 
 
 def remover_estrutura(apps, schema_editor):

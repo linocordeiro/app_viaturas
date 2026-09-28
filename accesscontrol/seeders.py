@@ -21,6 +21,7 @@ ESTRUTURA = [
                     ("registrar_chegada", "Registrar chegada de viatura", "acao"),
                     ("editar_registro", "Editar registro de saída/chegada", "acao"),
                     ("encerrar", "Encerrar ficha do expediente", "acao"),
+                    ("assinar_vigilante", "Apor assinatura do Vigilante", "acao"),
                     ("exportar_pdf", "Exportar ficha em PDF", "acao"),
                     ("exportar_excel", "Exportar ficha em Excel", "acao"),
                     ("apor_visto_nutran", "Apor visto do Responsável pelas Viaturas (NUTRAN)", "acao"),
@@ -127,6 +128,7 @@ PERFIS = {
             "operacao_diaria.fichas.registrar_chegada",
             "operacao_diaria.fichas.editar_registro",
             "operacao_diaria.fichas.encerrar",
+            "operacao_diaria.fichas.assinar_vigilante",
         ],
         "widgets": ["viaturas_em_transito"],
     },
@@ -140,6 +142,8 @@ PERFIS = {
             "frota.manutencao.criar",
             "frota.manutencao.editar",
             "operacao_diaria.fichas.visualizar",
+            "operacao_diaria.fichas.exportar_pdf",
+            "operacao_diaria.fichas.exportar_excel",
             "operacao_diaria.fichas.apor_visto_nutran",
         ],
         "widgets": ["viaturas_em_transito", "metricas_frota", "alertas_manutencao", "grafico_km_7dias", "total_saidas_mes"],
@@ -154,7 +158,7 @@ PERFIS = {
         "widgets": ["viaturas_em_transito"],
     },
     "chefia": {
-        "descricao": "Chefia — visualização de fichas, exportação e apor visto da chefia",
+        "descricao": "Chefia — consulta da frota e manutenções, relatórios e visto da chefia (somente leitura)",
         "acoes": [
             "operacao_diaria.fichas.visualizar",
             "operacao_diaria.fichas.exportar_pdf",
@@ -163,7 +167,7 @@ PERFIS = {
             "frota.viaturas.visualizar",
             "frota.manutencao.visualizar",
         ],
-        "widgets": ["viaturas_em_transito"],
+        "widgets": ["viaturas_em_transito", "metricas_frota", "alertas_manutencao", "grafico_km_7dias", "total_saidas_mes"],
     },
     "administrador": {
         "descricao": "Administrador do Sistema — acesso total a todos os módulos e funcionalidades",

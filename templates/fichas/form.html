@@ -26,6 +26,25 @@
   <form method="post">
     {% csrf_token %}
 
+    {% if form.errors %}
+      <div class="pf-alert pf-alert-danger" style="margin-bottom: var(--space-20); display: flex; align-items: flex-start; gap: 12px; background: #FEF2F2; border-left: 4px solid #DC2626; border-radius: 6px; padding: 14px 16px; color: #991B1B;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 18px; margin-top: 2px;"></i>
+        <div>
+          <strong style="display: block; margin-bottom: 4px;">Por favor, verifique as pendências no formulário:</strong>
+          <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
+            {% for field in form %}
+              {% for error in field.errors %}
+                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+
     <div class="pf-card-header">
       <div class="pf-card-title">
         <i class="fas fa-calendar-check"></i> Parâmetros do Expediente
@@ -33,30 +52,24 @@
     </div>
 
     <div class="pf-form-grid">
-      <div class="col-4">
+      <div class="col-6">
         <div class="pf-field">
           <label for="{{ form.data_expediente.id_for_label }}" class="required">{{ form.data_expediente.label }}</label>
           {{ form.data_expediente }}
-          <small class="pf-small">{{ form.data_expediente.help_text }}</small>
+          <small class="pf-small">{{ form.data_expediente.help_text|default:"Data do plantão/expediente" }}</small>
           {% if form.data_expediente.errors %}<div class="pf-error-text">{{ form.data_expediente.errors.0 }}</div>{% endif %}
         </div>
       </div>
 
-      <div class="col-4">
+      <div class="col-6">
         <div class="pf-field">
-          <label for="{{ form.horario_inicio.id_for_label }}" class="required">{{ form.horario_inicio.label }}</label>
-          {{ form.horario_inicio }}
-          {% if form.horario_inicio.errors %}<div class="pf-error-text">{{ form.horario_inicio.errors.0 }}</div>{% endif %}
+          <label for="{{ form.turno.id_for_label }}" class="required">{{ form.turno.label }}</label>
+          {{ form.turno }}
+          <small class="pf-small">{{ form.turno.help_text }}</small>
+          {% if form.turno.errors %}<div class="pf-error-text">{{ form.turno.errors.0 }}</div>{% endif %}
         </div>
       </div>
 
-      <div class="col-4">
-        <div class="pf-field">
-          <label for="{{ form.horario_termino.id_for_label }}" class="required">{{ form.horario_termino.label }}</label>
-          {{ form.horario_termino }}
-          {% if form.horario_termino.errors %}<div class="pf-error-text">{{ form.horario_termino.errors.0 }}</div>{% endif %}
-        </div>
-      </div>
 
       <div class="col-6">
         <div class="pf-field">

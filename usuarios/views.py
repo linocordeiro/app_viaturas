@@ -79,6 +79,7 @@ def usuario_criar(request):
                 up.save(update_fields=["atribuido_por"])
             messages.success(request, f"Usuário {user.username} cadastrado com sucesso.")
             return redirect("usuarios:lista")
+        messages.error(request, "Não foi possível salvar o usuário. Verifique as pendências apontadas no formulário.")
     else:
         form = UsuarioForm()
 
@@ -99,6 +100,7 @@ def usuario_editar(request, pk):
             invalidar_cache(usuario.pk)
             messages.success(request, f"Dados do usuário {usuario.username} atualizados com sucesso.")
             return redirect("usuarios:lista")
+        messages.error(request, "Não foi possível atualizar o usuário. Verifique as pendências apontadas no formulário.")
     else:
         form = UsuarioForm(instance=usuario)
 
@@ -120,6 +122,23 @@ def usuario_toggle_ativo(request, pk):
     usuario.save(update_fields=["is_active"])
     status_str = "ativado" if usuario.is_active else "desativado"
     messages.success(request, f"Usuário {usuario.username} foi {status_str} com sucesso.")
+    return redirect("usuarios:lista")
+
+
+@requer_permissao("usuarios.cadastro.editar")
+def usuario_resetar_senha(request, pk):
+    """
+    Reseta a senha do usuário selecionado para a senha padrão 'mudar@123'.
+    """
+    usuario = get_object_or_404(Usuario, pk=pk)
+    if request.method == "POST":
+        usuario.set_password("mudar@123")
+        usuario.save(update_fields=["password"])
+        messages.success(
+            request,
+            f"A senha do usuário '{usuario.username}' ({usuario.get_full_name() or 'Servidor'}) "
+            f"foi resetada com sucesso para a senha padrão 'mudar@123'."
+        )
     return redirect("usuarios:lista")
 
 

@@ -4,9 +4,12 @@ from django.contrib import admin
 from django.shortcuts import redirect
 from django.urls import include, path
 
+from core.views import manutencao_view
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("login/", lambda req: redirect("usuarios:login")),
+    path("manutencao/", manutencao_view, name="manutencao"),
     path("", include("dashboard.urls", namespace="dashboard")),
     path("usuarios/", include("usuarios.urls", namespace="usuarios")),
     path("viaturas/", include("veiculos.urls", namespace="veiculos")),

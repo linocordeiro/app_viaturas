@@ -289,6 +289,7 @@ class CodigoAcao:
     FICH_SAIDA_REGISTRADA = 4010
     FICH_RETORNO_REGISTRADO = 4011
     FICH_MOVIMENTACAO_EDITADA = 4012
+    FICH_ASSINATURA_VIGILANTE = 4019
     FICH_VISTO_NUTRAN = 4020
     FICH_VISTO_CHEFIA = 4021
     FICH_EXPORTADA_PDF = 4030
@@ -324,6 +325,7 @@ class CodigoAcao:
         (FICH_SAIDA_REGISTRADA, "4010 — Registro de saída de viatura"),
         (FICH_RETORNO_REGISTRADO, "4011 — Registro de retorno de viatura"),
         (FICH_MOVIMENTACAO_EDITADA, "4012 — Edição de movimentação de viatura"),
+        (FICH_ASSINATURA_VIGILANTE, "4019 — Aposição de assinatura do Vigilante na ficha"),
         (FICH_VISTO_NUTRAN, "4020 — Aposição de visto NUTRAN na ficha"),
         (FICH_VISTO_CHEFIA, "4021 — Aposição de visto da Chefia na ficha"),
         (FICH_EXPORTADA_PDF, "4030 — Exportação de ficha em PDF"),

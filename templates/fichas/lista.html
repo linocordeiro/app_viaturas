@@ -79,7 +79,12 @@
               {% endif %}
             </td>
             <td>{{ f.horario_inicio|time:"H:i" }} às {{ f.horario_termino|time:"H:i" }}</td>
-            <td><strong>{{ f.nome_vigilante }}</strong></td>
+            <td>
+              <strong>{{ f.nome_vigilante }}</strong>
+              {% if f.assinatura_vigilante %}
+                <div><span class="pf-badge pf-badge-success" style="font-size: 10px; padding: 2px 6px; margin-top: 4px;" title="Assinatura lançada por {{ f.vigilante_assinatura_usuario.get_full_name|default:f.vigilante_assinatura_usuario.username|default:f.nome_vigilante }}"><i class="fas fa-check-circle"></i> Assinada</span></div>
+              {% endif %}
+            </td>
             <td>
               <span class="pf-badge pf-badge-dark">
                 {{ f.registros.count }} saída(s)

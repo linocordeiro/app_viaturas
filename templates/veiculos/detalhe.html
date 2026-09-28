@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load permissoes %}
 
 {% block title %}Viatura {{ viatura.placa }}{% endblock %}
 
@@ -22,12 +23,18 @@
     <a href="{% url 'veiculos:exportar_manutencoes_excel' viatura.pk %}" class="pf-btn pf-btn-secondary" title="Baixar Histórico em Excel">
       <i class="fas fa-file-excel" style="color: var(--pf-green-500);"></i> Excel Manutenção
     </a>
+    {% tem_perm 'frota.manutencao.criar' as pode_criar_manutencao %}
+    {% if pode_criar_manutencao %}
     <a href="{% url 'veiculos:manutencao_criar' viatura.pk %}" class="pf-btn pf-btn-gold">
       <i class="fas fa-tools"></i> Registrar Manutenção
     </a>
+    {% endif %}
+    {% tem_perm 'frota.viaturas.editar' as pode_editar_viatura %}
+    {% if pode_editar_viatura %}
     <a href="{% url 'veiculos:editar' viatura.pk %}" class="pf-btn pf-btn-primary">
       <i class="fas fa-edit"></i> Editar Viatura
     </a>
+    {% endif %}
   </div>
 </div>
 
@@ -155,11 +162,13 @@
           <strong>{{ manutencoes.count }} registros</strong>
         </div>
 
+        {% if pode_criar_manutencao %}
         <div style="margin-top: var(--space-16);">
           <a href="{% url 'veiculos:manutencao_criar' viatura.pk %}" class="pf-btn pf-btn-secondary" style="width: 100%;">
             <i class="fas fa-plus"></i> Agendar / Nova Manutenção
           </a>
         </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -171,11 +180,13 @@
     <div class="pf-card-title">
       <i class="fas fa-history"></i> Histórico de Manutenções do Veículo
     </div>
+    {% if pode_criar_manutencao %}
     <div>
       <a href="{% url 'veiculos:manutencao_criar' viatura.pk %}" class="pf-btn pf-btn-sm pf-btn-primary">
         <i class="fas fa-plus"></i> Nova Manutenção
       </a>
     </div>
+    {% endif %}
   </div>
 
   <div class="pf-table-wrapper">

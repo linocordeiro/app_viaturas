@@ -23,7 +23,7 @@ class VeiculosModelTestCase(TestCase):
             first_name="Policial",
             last_name="de Teste",
             matricula="PF99999",
-            perfil=Usuario.PERFIL_RESPONSAVEL
+            is_superuser=True,
         )
         self.viatura = Viatura.objects.create(
             placa="PF-0101",
@@ -145,4 +145,131 @@ class RelatoriosVeiculosTestCase(TestCase):
         manutencoes = self.viatura.manutencoes.all()
         excel_bytes = gerar_excel_manutencoes(self.viatura, manutencoes)
         self.assertTrue(excel_bytes.startswith(b"PK\x03\x04"))
+
+
+class PermissoesChefiaVeiculosTestCase(TestCase):
+    def setUp(self):
+        from django.urls import reverse
+        from accesscontrol.models import Acao, Modulo, Perfil, Submodulo, UsuarioPerfil
+
+        self.reverse = reverse
+        self.setor = Setor.objects.create(sigla="DREX", nome="Delegacia Regional Executiva")
+        self.viatura = Viatura.objects.create(
+            placa="BRA2E19",
+            marca="Toyota",
+            modelo="Hilux",
+            ano_fabricacao=2023,
+            ano_modelo=2023,
+            setor_pertencente=self.setor,
+            km_atual=30000,
+        )
+
+        mod_frota, _ = Modulo.objects.get_or_create(codigo="frota", defaults={"nome": "Gestão de Frota", "ordem": 2})
+        sub_viaturas, _ = Submodulo.objects.get_or_create(modulo=mod_frota, codigo="viaturas", defaults={"nome": "Viaturas", "ordem": 1})
+        sub_manutencao, _ = Submodulo.objects.get_or_create(modulo=mod_frota, codigo="manutencao", defaults={"nome": "Manutenção", "ordem": 2})
+
+        # Ações de visualização (permitidas para chefia)
+        acao_ver_viaturas, _ = Acao.objects.get_or_create(
+            codigo_completo="frota.viaturas.visualizar",
+            defaults={"modulo": mod_frota, "submodulo": sub_viaturas, "codigo": "visualizar", "nome": "Visualizar viaturas", "tipo": "tela"}
+        )
+        acao_ver_manutencao, _ = Acao.objects.get_or_create(
+            codigo_completo="frota.manutencao.visualizar",
+            defaults={"modulo": mod_frota, "submodulo": sub_manutencao, "codigo": "visualizar", "nome": "Visualizar manutenção", "tipo": "tela"}
+        )
+
+        # Ações de escrita (NÃO permitidas para chefia)
+        Acao.objects.get_or_create(
+            codigo_completo="frota.viaturas.criar",
+            defaults={"modulo": mod_frota, "submodulo": sub_viaturas, "codigo": "criar", "nome": "Criar viatura", "tipo": "acao"}
+        )
+        Acao.objects.get_or_create(
+            codigo_completo="frota.viaturas.editar",
+            defaults={"modulo": mod_frota, "submodulo": sub_viaturas, "codigo": "editar", "nome": "Editar viatura", "tipo": "acao"}
+        )
+        Acao.objects.get_or_create(
+            codigo_completo="frota.manutencao.criar",
+            defaults={"modulo": mod_frota, "submodulo": sub_manutencao, "codigo": "criar", "nome": "Criar manutenção", "tipo": "acao"}
+        )
+
+        # Perfil Chefia com permissões estritamente de visualização/consulta e relatórios
+        self.perfil_chefia, _ = Perfil.objects.get_or_create(nome="chefia", defaults={"descricao": "Perfil Chefia", "ativo": True})
+        self.perfil_chefia.acoes.set([acao_ver_viaturas, acao_ver_manutencao])
+
+        self.user_chefia = Usuario.objects.create_user(
+            username="delegado.teste",
+            password="senhaChefia123",
+            first_name="Delegado",
+            last_name="Regional",
+            is_superuser=False,
+        )
+        UsuarioPerfil.objects.create(usuario=self.user_chefia, perfil=self.perfil_chefia, ativo=True)
+
+    def test_chefia_lista_viaturas_sem_botoes_de_acao(self):
+        self.client.login(username="delegado.teste", password="senhaChefia123")
+        response = self.client.get(self.reverse("veiculos:lista"))
+        self.assertEqual(response.status_code, 200)
+
+        # Pode consultar os dados e relatórios
+        self.assertContains(response, "Relatório PDF")
+        self.assertContains(response, "Planilha Excel")
+        self.assertContains(response, "Detalhes")
+        self.assertContains(response, "BRA2E19")
+
+        # NÃO pode ver botões de ação para criar ou editar
+        self.assertNotContains(response, "Nova Viatura")
+        self.assertNotContains(response, 'title="Editar Veículo"')
+
+    def test_chefia_detalhe_viatura_sem_botoes_de_acao(self):
+        self.client.login(username="delegado.teste", password="senhaChefia123")
+        response = self.client.get(self.reverse("veiculos:detalhe", kwargs={"pk": self.viatura.pk}))
+        self.assertEqual(response.status_code, 200)
+
+        # Pode consultar relatórios
+        self.assertContains(response, "PDF Manutenção")
+        self.assertContains(response, "Excel Manutenção")
+        self.assertContains(response, "BRA2E19")
+
+        # NÃO pode ver botões de registrar manutenção nem de editar viatura
+        self.assertNotContains(response, "Registrar Manutenção")
+        self.assertNotContains(response, "Editar Viatura")
+        self.assertNotContains(response, "Agendar / Nova Manutenção")
+        self.assertNotContains(response, "Nova Manutenção")
+
+    def test_chefia_bloqueada_em_urls_de_modificacao(self):
+        self.client.login(username="delegado.teste", password="senhaChefia123")
+
+        # Tentativa de criar viatura -> 403
+        r_criar = self.client.get(self.reverse("veiculos:criar"))
+        self.assertEqual(r_criar.status_code, 403)
+
+        # Tentativa de editar viatura -> 403
+        r_editar = self.client.get(self.reverse("veiculos:editar", kwargs={"pk": self.viatura.pk}))
+        self.assertEqual(r_editar.status_code, 403)
+
+        # Tentativa de registrar manutenção -> 403
+        r_manut = self.client.get(self.reverse("veiculos:manutencao_criar", kwargs={"viatura_pk": self.viatura.pk}))
+        self.assertEqual(r_manut.status_code, 403)
+
+    def test_chefia_pode_gerar_relatorios(self):
+        self.client.login(username="delegado.teste", password="senhaChefia123")
+
+        # Relatório PDF de Viaturas
+        r_pdf_v = self.client.get(self.reverse("veiculos:exportar_pdf"))
+        self.assertEqual(r_pdf_v.status_code, 200)
+        self.assertEqual(r_pdf_v["Content-Type"], "application/pdf")
+
+        # Relatório Excel de Viaturas
+        r_xls_v = self.client.get(self.reverse("veiculos:exportar_excel"))
+        self.assertEqual(r_xls_v.status_code, 200)
+
+        # Relatório PDF de Manutenções da Viatura
+        r_pdf_m = self.client.get(self.reverse("veiculos:exportar_manutencoes_pdf", kwargs={"pk": self.viatura.pk}))
+        self.assertEqual(r_pdf_m.status_code, 200)
+        self.assertEqual(r_pdf_m["Content-Type"], "application/pdf")
+
+        # Relatório Excel de Manutenções da Viatura
+        r_xls_m = self.client.get(self.reverse("veiculos:exportar_manutencoes_excel", kwargs={"pk": self.viatura.pk}))
+        self.assertEqual(r_xls_m.status_code, 200)
+
 

@@ -8,6 +8,7 @@ from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
 from .audit_service import registrar_log
+from .context import get_current_request
 from .models import CodigoAcao
 
 
@@ -106,9 +107,21 @@ def on_manutencao_save(sender, instance, created, **kwargs):
 @receiver(post_save, sender="fichas.FichaControle")
 def on_ficha_save(sender, instance, created, **kwargs):
     data_formatada = instance.data_expediente.strftime("%d/%m/%Y") if instance.data_expediente else "N/A"
+    request = get_current_request()
+    path = getattr(request, "path", "") if request else ""
+
     if created:
         codigo = CodigoAcao.FICH_ABERTA
         desc = f"Abertura da ficha de controle nº {instance.pk} ({data_formatada})"
+    elif "assinar/vigilante" in path:
+        codigo = CodigoAcao.FICH_ASSINATURA_VIGILANTE
+        desc = f"Assinatura do Vigilante lançada na ficha de controle nº {instance.pk} ({data_formatada})"
+    elif "assinar/responsavel" in path:
+        codigo = CodigoAcao.FICH_VISTO_NUTRAN
+        desc = f"Visto do Responsável (NUTRAN) aplicado na ficha de controle nº {instance.pk} ({data_formatada})"
+    elif "assinar/chefia" in path:
+        codigo = CodigoAcao.FICH_VISTO_CHEFIA
+        desc = f"Visto da Chefia aplicado na ficha de controle nº {instance.pk} ({data_formatada})"
     elif instance.status == "ENCERRADA":
         codigo = CodigoAcao.FICH_ENCERRADA
         desc = f"Encerramento da ficha de controle nº {instance.pk} ({data_formatada})"
@@ -127,6 +140,7 @@ def on_ficha_save(sender, instance, created, **kwargs):
             "data_expediente": str(instance.data_expediente),
             "status": instance.status,
             "vigilante": str(instance.nome_vigilante or ""),
+            "assinatura_vigilante": instance.assinatura_vigilante,
             "visto_responsavel": instance.visto_responsavel,
             "visto_chefia": instance.visto_chefia,
         },
@@ -140,10 +154,28 @@ def on_registro_uso_save(sender, instance, created, **kwargs):
     ficha_id = getattr(instance.ficha, "pk", "N/A")
     condutor = str(getattr(instance, "condutor_nome", "") or getattr(instance, "condutor", ""))
 
+    request = get_current_request()
+    path = getattr(request, "path", "") if request else ""
+
+    horario_chegada = getattr(instance, "horario_chegada", None)
+    odometro_chegada = getattr(instance, "odometro_chegada", None)
+    odometro_saida = getattr(instance, "odometro_saida", None)
+    horario_saida = getattr(instance, "horario_saida", None)
+
     if created:
-        codigo = CodigoAcao.FICH_SAIDA_REGISTRADA
-        desc = f"Registro de saída da viatura {placa} (Ficha #{ficha_id}, Condutor: {condutor})"
-    elif instance.horario_retorno:
+        if getattr(instance, "tipo_movimentacao", "") == "CHEGADA":
+            codigo = CodigoAcao.FICH_RETORNO_REGISTRADO
+            desc = f"Registro de retorno da viatura {placa} (Ficha #{ficha_id}, Condutor: {condutor})"
+        else:
+            codigo = CodigoAcao.FICH_SAIDA_REGISTRADA
+            desc = f"Registro de saída da viatura {placa} (Ficha #{ficha_id}, Condutor: {condutor})"
+    elif "chegada" in path or (horario_chegada and getattr(instance, "status", "") == "CONCLUIDO" and "editar" not in path):
+        codigo = CodigoAcao.FICH_RETORNO_REGISTRADO
+        desc = f"Registro de retorno da viatura {placa} (Ficha #{ficha_id})"
+    elif "editar" in path:
+        codigo = CodigoAcao.FICH_MOVIMENTACAO_EDITADA
+        desc = f"Atualização do registro de movimentação da viatura {placa} (Ficha #{ficha_id})"
+    elif horario_chegada:
         codigo = CodigoAcao.FICH_RETORNO_REGISTRADO
         desc = f"Registro de retorno da viatura {placa} (Ficha #{ficha_id})"
     else:
@@ -160,10 +192,13 @@ def on_registro_uso_save(sender, instance, created, **kwargs):
             "viatura": placa,
             "ficha_id": ficha_id,
             "condutor": condutor,
-            "km_saida": instance.km_saida,
-            "km_retorno": instance.km_retorno,
-            "horario_saida": str(instance.horario_saida or ""),
-            "horario_retorno": str(instance.horario_retorno or ""),
+            "odometro_saida": odometro_saida,
+            "odometro_chegada": odometro_chegada,
+            "km_saida": odometro_saida,
+            "km_retorno": odometro_chegada,
+            "horario_saida": str(horario_saida or ""),
+            "horario_chegada": str(horario_chegada or ""),
+            "horario_retorno": str(horario_chegada or ""),
             "destino": getattr(instance, "destino", ""),
         },
     )

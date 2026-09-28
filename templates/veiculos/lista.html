@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load permissoes %}
 
 {% block title %}Frota de Viaturas{% endblock %}
 
@@ -22,9 +23,12 @@
     <a href="{% url 'veiculos:exportar_excel' %}" class="pf-btn pf-btn-secondary" title="Exportar Lista em Excel">
       <i class="fas fa-file-excel" style="color: var(--pf-green-500);"></i> Planilha Excel
     </a>
+    {% tem_perm 'frota.viaturas.criar' as pode_criar_viatura %}
+    {% if pode_criar_viatura %}
     <a href="{% url 'veiculos:criar' %}" class="pf-btn pf-btn-primary">
       <i class="fas fa-plus"></i> Nova Viatura
     </a>
+    {% endif %}
   </div>
 </div>
 
@@ -170,9 +174,12 @@
               <a href="{% url 'veiculos:detalhe' item.viatura.pk %}" class="pf-btn pf-btn-sm pf-btn-secondary" title="Ver Histórico Completo">
                 <i class="fas fa-eye"></i> Detalhes
               </a>
+              {% tem_perm 'frota.viaturas.editar' as pode_editar_viatura %}
+              {% if pode_editar_viatura %}
               <a href="{% url 'veiculos:editar' item.viatura.pk %}" class="pf-btn pf-btn-sm pf-btn-ghost" title="Editar Veículo">
                 <i class="fas fa-edit"></i>
               </a>
+              {% endif %}
             </td>
           </tr>
         {% empty %}

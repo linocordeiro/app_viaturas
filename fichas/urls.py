@@ -9,9 +9,13 @@ urlpatterns = [
     path("hoje/", views.ficha_hoje, name="hoje"),
     path("nova/", views.ficha_criar, name="criar"),
     path("<int:pk>/", views.ficha_detalhe, name="detalhe"),
+    path("<int:ficha_pk>/movimentacao/", views.registro_movimentacao_criar, name="movimentacao_criar"),
     path("<int:ficha_pk>/saida/", views.registro_saida_criar, name="saida_criar"),
+    path("<int:ficha_pk>/chegada-avulsa/", views.registro_chegada_avulsa_criar, name="chegada_avulsa_criar"),
+
     path("registro/<int:pk>/chegada/", views.registro_chegada_concluir, name="chegada_concluir"),
     path("registro/<int:pk>/editar/", views.registro_editar, name="registro_editar"),
+    path("<int:pk>/assinar/vigilante/", views.ficha_assinar_vigilante, name="assinar_vigilante"),
     path("<int:pk>/assinar/responsavel/", views.ficha_assinar_responsavel, name="assinar_responsavel"),
     path("<int:pk>/assinar/chefia/", views.ficha_assinar_chefia, name="assinar_chefia"),
     path("<int:pk>/encerrar/", views.ficha_encerrar, name="encerrar"),
