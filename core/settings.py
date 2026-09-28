@@ -37,11 +37,11 @@ SECRET_KEY = os.getenv(
 # Configuração de Ambiente de banco de dados: production / development
 DB_ENV = os.environ.get("DB_ENV", "development").strip().lower()
 
-if DB_ENV == "production":
+if DB_ENV in ("producao"):
     DEBUG = False
     DATABASE_NAME = str(BASE_DIR / "database" / "db_prod.sqlite3")
 else:
-    DB_ENV = "development"
+    DB_ENV = "desenvolvimento"
     DEBUG = True
     DATABASE_NAME = str(BASE_DIR / "database" / "db_dev.sqlite3")
 
@@ -57,7 +57,7 @@ elif APP_ENV == "operacao":
     ALLOWED_HOSTS = ["10.68.6.121"]
     CSRF_TRUSTED_ORIGINS = [
         "https://10.68.6.121",
-        "https://10.68.6.121:8443",
+        "https://10.68.6.121:9443",
     ]
 
 

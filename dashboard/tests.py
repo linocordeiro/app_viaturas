@@ -23,7 +23,7 @@ class DashboardTestCase(TestCase):
             matricula="PF77777",
             perfil=Usuario.PERFIL_RESPONSAVEL,
         )
-        self.setor = Setor.objects.create(sigla="DREX", nome="Delegacia Regional Executiva")
+        self.setor, _ = Setor.objects.get_or_create(sigla="DREX", defaults={"nome": "Delegacia Regional Executiva"})
 
         # Viaturas de teste com status variados
         self.v1 = Viatura.objects.create(

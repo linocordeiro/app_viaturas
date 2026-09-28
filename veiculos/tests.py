@@ -12,10 +12,12 @@ Usuario = get_user_model()
 
 class VeiculosModelTestCase(TestCase):
     def setUp(self):
-        self.setor = Setor.objects.create(
+        self.setor, _ = Setor.objects.get_or_create(
             sigla="DREX",
-            nome="Delegacia Regional Executiva",
-            responsavel="Delegado Regional"
+            defaults={
+                "nome": "Delegacia Regional Executiva",
+                "responsavel": "Delegado Regional"
+            }
         )
         self.usuario = Usuario.objects.create_user(
             username="policial.teste",
@@ -107,7 +109,7 @@ class VeiculosModelTestCase(TestCase):
 
 class RelatoriosVeiculosTestCase(TestCase):
     def setUp(self):
-        self.setor = Setor.objects.create(sigla="GPI", nome="Grupo de Pronta Intervenção")
+        self.setor, _ = Setor.objects.get_or_create(sigla="GPI", defaults={"nome": "Grupo de Pronta Intervenção"})
         self.viatura = Viatura.objects.create(
             placa="PF-0202",
             marca="Chevrolet",

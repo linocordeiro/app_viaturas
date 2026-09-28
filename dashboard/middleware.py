@@ -20,12 +20,16 @@ def apply_environment(override=True):
         except (PermissionError, OSError):
             pass
 
-    DB_ENV = os.environ.get("DB_ENV", "development").strip().lower()
-    if DB_ENV == "production":
+    import sys
+    if getattr(settings, "TESTING", False) or "test" in sys.argv:
+        return getattr(settings, "DB_ENV", "desenvolvimento"), getattr(settings, "DEBUG", True), settings.DATABASES["default"]["NAME"]
+
+    DB_ENV = os.environ.get("DB_ENV", "desenvolvimento").strip().lower()
+    if DB_ENV in ("producao"):
         debug = False
         db_name = str(base_dir / "database" / "db_prod.sqlite3")
     else:
-        DB_ENV = "development"
+        DB_ENV = "desenvolvimento"
         debug = True
         db_name = str(base_dir / "database" / "db_dev.sqlite3")
 
