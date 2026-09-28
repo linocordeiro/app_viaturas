@@ -4,7 +4,11 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from services.relatorios_excel import gerar_excel_manutencoes, gerar_excel_viaturas
-from services.relatorios_pdf import gerar_pdf_manutencoes_viatura, gerar_pdf_viaturas
+from services.relatorios_pdf import (
+    cabecalho_institucional,
+    gerar_pdf_manutencoes_viatura,
+    gerar_pdf_viaturas,
+)
 from veiculos.models import Manutencao, Setor, Viatura
 
 Usuario = get_user_model()
@@ -145,6 +149,17 @@ class RelatoriosVeiculosTestCase(TestCase):
         manutencoes = self.viatura.manutencoes.all()
         excel_bytes = gerar_excel_manutencoes(self.viatura, manutencoes)
         self.assertTrue(excel_bytes.startswith(b"PK\x03\x04"))
+
+    def test_cabecalho_institucional_superintendencia(self):
+        table = cabecalho_institucional("Documento Teste")
+        cell_elements = table._cellvalues[0][-1]
+        textos = [p.text for p in cell_elements if hasattr(p, "text")]
+        self.assertIn("<b>DEPARTAMENTO DE POLÍCIA FEDERAL</b>", textos)
+        idx_dpf = textos.index("<b>DEPARTAMENTO DE POLÍCIA FEDERAL</b>")
+        self.assertTrue(
+            any("SUPERINTEND" in t and "ACRE" in t for t in textos[idx_dpf + 1:]),
+            "O texto da Superintendência Regional no Acre deve estar presente abaixo de DEPARTAMENTO DE POLÍCIA FEDERAL."
+        )
 
 
 class PermissoesChefiaVeiculosTestCase(TestCase):

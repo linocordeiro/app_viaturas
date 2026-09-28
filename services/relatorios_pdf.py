@@ -50,8 +50,17 @@ def cabecalho_institucional(
         "HeaderTitle",
         parent=styles["Normal"],
         fontName="Helvetica-Bold",
-        fontSize=12,
-        leading=14,
+        fontSize=11,
+        leading=13,
+        textColor=PF_BLACK,
+        alignment=1
+    )
+    regional_style = ParagraphStyle(
+        "HeaderRegional",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=10,
+        leading=12,
         textColor=PF_BLACK,
         alignment=1
     )
@@ -59,8 +68,8 @@ def cabecalho_institucional(
         "HeaderSub",
         parent=styles["Normal"],
         fontName="Helvetica",
-        fontSize=9,
-        leading=12,
+        fontSize=8.5,
+        leading=11,
         textColor=PF_GREY_TEXT,
         alignment=1
     )
@@ -77,6 +86,7 @@ def cabecalho_institucional(
     col_text = [
         Paragraph("<b>MINISTÉRIO DA JUSTIÇA E SEGURANÇA PÚBLICA</b>", titulo_style),
         Paragraph("<b>DEPARTAMENTO DE POLÍCIA FEDERAL</b>", titulo_style),
+        Paragraph("<b>SUPERINTENDÊNCIA REGIONAL DA POLÍCIA FEDERAL NO ACRE</b>", regional_style),
         Paragraph(subtitulo, sub_style),
         Spacer(1, 4),
         Paragraph(f"<b>{titulo_documento.upper()}</b>", doc_title_style),

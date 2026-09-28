@@ -25,6 +25,24 @@
 
 ## Histórico de Commits
 
+### Identificação Institucional da SR/PF/AC no Cabeçalho dos Relatórios · 27/09/2026
+
+**Tipo:** `style` / `feat` — Adição da Superintendência Regional da Polícia Federal no Acre nos Cabeçalhos Oficiais  
+**Branch:** `develop`
+
+**Descrição:**
+- **Identidade Institucional nos Relatórios Oficiais (`services/relatorios_pdf.py`):**
+  - Adicionado o texto `SUPERINTENDÊNCIA REGIONAL DA POLÍCIA FEDERAL NO ACRE` no bloco de cabeçalho unificado dos relatórios PDF (`cabecalho_institucional`), posicionado imediatamente abaixo de `DEPARTAMENTO DE POLÍCIA FEDERAL`.
+  - Criado o estilo tipográfico `HeaderRegional` (Helvetica-Bold, 10pt, entrelinha de 12pt, cor preta institucional PF) em conformidade com o Frontline PF Design System, assegurando hierarquia visual harmônica entre o órgão central, a superintendência regional e o título do documento.
+  - A alteração reflete automaticamente em todos os relatórios oficiais do sistema:
+    - Ficha Diária de Controle de Viaturas (`gerar_pdf_ficha`);
+    - Relatório Geral da Frota de Viaturas (`gerar_pdf_viaturas`);
+    - Histórico Individual de Manutenções da Viatura (`gerar_pdf_manutencoes_viatura`).
+- **Testes Automatizados (`veiculos/tests.py`):**
+  - Implementado teste unitário `test_cabecalho_institucional_superintendencia` na classe `RelatoriosVeiculosTestCase`, validando a presença e a correta ordem de precedência da Superintendência Regional em relação ao Departamento de Polícia Federal.
+
+---
+
 ### Sincronização de Bases de Dados (db_dev e db_prod) e Atualização de Ambientes · 27/09/2026
 
 **Tipo:** `chore` / `infra` — Sincronização Estrutural e de Permissões entre Bases de Desenvolvimento e Produção  
