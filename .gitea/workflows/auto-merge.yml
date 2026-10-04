@@ -1,0 +1,48 @@
+name: Auto-merge develop em main
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  automerge:
+    runs-on: windows-latest
+    steps:
+      - name: Criar e mergear PR develop -> main
+        shell: powershell
+        env:
+          GITEA_URL: "https://10.68.6.121:7443"
+          OWNER: "admin"
+          REPO: "app_viaturas"
+          TOKEN: ${{ secrets.API_TOKEN }}
+        run: |
+          [System.Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}
+          $headers = @{ Authorization = "token $env:TOKEN" }
+          $base = "$env:GITEA_URL/api/v1/repos/$env:OWNER/$env:REPO"
+
+          $body = @{
+              head  = "develop"
+              base  = "main"
+              title = "Auto-merge develop -> main"
+          } | ConvertTo-Json
+
+          try {
+              $pr = Invoke-RestMethod -Uri "$base/pulls" -Method POST -Headers $headers -Body $body -ContentType "application/json"
+              $numero = $pr.number
+              Write-Host "PR criado: #$numero"
+          } catch {
+              Write-Host "PR provavelmente já existe, buscando..."
+              $prs = Invoke-RestMethod -Uri "$base/pulls?state=open" -Headers $headers
+              $existente = $prs | Where-Object { $_.head.ref -eq "develop" -and $_.base.ref -eq "main" } | Select-Object -First 1
+              if (-not $existente) {
+                  Write-Error "Não foi possível criar nem encontrar o PR"
+                  exit 1
+              }
+              $numero = $existente.number
+              Write-Host "PR existente encontrado: #$numero"
+          }
+
+          $mergeBody = @{ Do = "merge" } | ConvertTo-Json
+          Invoke-RestMethod -Uri "$base/pulls/$numero/merge" -Method POST -Headers $headers -Body $mergeBody -ContentType "application/json"
+          Write-Host "PR #$numero mergeado com sucesso."

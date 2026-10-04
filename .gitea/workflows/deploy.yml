@@ -1,9 +1,12 @@
 name: Deploy app_viaturas
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      motivo:
+        description: 'Motivo do deploy manual'
+        required: false
+        default: 'deploy manual'
 
 jobs:
   deploy:
