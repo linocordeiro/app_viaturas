@@ -1,0 +1,19 @@
+name: Deploy app_viaturas
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        env:
+        GIT_SSL_NO_VERIFY: "true"
+
+      - name: Deploy em produção
+        run: |
+          powershell -ExecutionPolicy Bypass -File C:\scripts\deploy-app_viaturas.ps1
