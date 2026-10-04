@@ -18,8 +18,11 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Carrega variáveis do arquivo .env
-load_dotenv(BASE_DIR / ".env")
+# Carregar variáveis de ambiente do arquivo .env na raiz do projeto (ao iniciar ou reiniciar o servidor)
+try:
+    load_dotenv(os.path.join(BASE_DIR, ".env"), override=True)
+except (PermissionError, OSError):
+    pass
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -30,19 +33,39 @@ SECRET_KEY = os.getenv(
     "django-insecure-kqat%!_#$wn75-(uj_c3d+51$jetu!=hopn#kanwt6^30*qtu-",
 )
 
-# Configurações de Ambiente (APP_ENV: local ou operacao)
-APP_ENV = os.getenv("APP_ENV", "local").strip().lower()
+DATABASE_DIR = BASE_DIR / "database"
 
-if APP_ENV == "operacao":
+# Configuração de Ambiente de banco de dados: production / development
+DB_ENV = os.environ.get("DB_ENV", "development").strip().lower()
+
+if DB_ENV in ("producao", "production", "prod"):
+    DEBUG = False
+    DATABASE_NAME = str(DATABASE_DIR / "db_prod.sqlite3")
+else:
+    DB_ENV = "desenvolvimento"
+    DEBUG = True
+    DATABASE_NAME = str(DATABASE_DIR / "db_dev.sqlite3")
+
+# Configuração de Ambiente de aplicação: local / operacao
+APP_ENV = os.environ.get("APP_ENV", "local").strip().lower()
+
+if APP_ENV == "local":
+    DEBUG = True
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost", "testserver"]
+    CSRF_TRUSTED_ORIGINS = ["http://localhost", "http://127.0.0.1"]
+elif APP_ENV == "operacao":
     DEBUG = False
     ALLOWED_HOSTS = ["10.68.6.121"]
-else:  # local (padrão de desenvolvimento)
-    DEBUG = True
-    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+    CSRF_TRUSTED_ORIGINS = [
+        "https://10.68.6.121",
+        "https://10.68.6.121:9443",
+    ]
 
 # Mantém testserver para a execução de testes automatizados do Django
 if "testserver" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append("testserver")
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
 # Application definition
@@ -63,7 +86,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "dashboard.middleware.EnvReloadMiddleware",
+    "dashboard.middleware.RealIPMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "core.middleware.DynamicDatabaseMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -101,15 +127,10 @@ WSGI_APPLICATION = "core.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASE_DIR = BASE_DIR / "database"
-
-_db_env_init = os.getenv("DB_ENV", "desenvolvimento").strip().lower()
-_is_prod_init = _db_env_init in ("producao", "production", "prod")
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": DATABASE_DIR / "db_prod.sqlite3" if _is_prod_init else DATABASE_DIR / "db_dev.sqlite3",
+        "NAME": DATABASE_NAME,
     },
     "desenvolvimento": {
         "ENGINE": "django.db.backends.sqlite3",

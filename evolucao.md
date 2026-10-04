@@ -25,6 +25,29 @@
 
 ## Histórico de Commits
 
+### Integração da Branch ft_review com Resolução de Conflitos e Padronização de Tabelas · 04/10/2026
+
+**Tipo:** `merge` / `refactor` / `feat` — Conclusão do Merge da Branch `ft_review` na `develop`  
+**Branch:** `develop`
+
+**Descrição:**
+- **Critério de Prevalência Temporal e Resolução de Conflitos:**
+  - Conflitos de merge entre `ft_review` e `develop` resolvidos garantindo a prevalência das alterações mais recentes:
+    - `serve.py`: Mantido `host='127.0.0.1'` atualizado em 04/10/2026.
+    - `core/settings.py`: Integradas configurações de produção mais recentes (28/09/2026) com suporte a `CSRF_TRUSTED_ORIGINS` na porta `9443`, `SECURE_PROXY_SSL_HEADER`, `EnvReloadMiddleware`, `RealIPMiddleware`, e preservação da arquitetura multi-database (`desenvolvimento`, `producao`) e cache RBAC.
+    - `requirements.txt` e `uv.lock`: Mantida versão limpa com `tzdata 2026.4` gerada mais recentemente via `uv export --no-hashes` (28/09/2026).
+    - `usuarios/urls.py` e `usuarios/views.py`: Preservadas as rotas e views de gerenciamento de perfis RBAC (`perfis_gerenciar`), edição de perfil próprio (`meu_perfil`) e reset de senha seguro via POST com CSRF e auditoria completa.
+- **Padrão Obrigatório de Botões de Ação em Tabelas (`padrao-tabelas-acoes.md`):**
+  - Unificação em todas as tabelas do sistema (`templates/dashboard/index.html`, `templates/fichas/lista.html`, `templates/usuarios/lista.html`, `templates/veiculos/lista.html`):
+    - Uso exclusivo de ícones sem texto na coluna de ações através de `.pf-action-btn` dentro do container oficial `.pf-table-actions`.
+    - Garantia de acessibilidade por meio de atributos `title` e `aria-label` contextuais.
+    - Preservação de todas as restrições granulares de acesso RBAC (`tem_perm`).
+- **Testes Automatizados:**
+  - Atualizado `veiculos/tests.py` para compatibilidade com o padrão de acessibilidade dos botões de ação.
+  - Execução e aprovação de 100% da suíte de testes do Django (62/62 testes OK).
+
+---
+
 ### Identificação Institucional da SR/PF/AC no Cabeçalho dos Relatórios · 27/09/2026
 
 **Tipo:** `style` / `feat` — Adição da Superintendência Regional da Polícia Federal no Acre nos Cabeçalhos Oficiais  

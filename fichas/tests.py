@@ -15,7 +15,7 @@ Usuario = get_user_model()
 
 class FichaControleTestCase(TestCase):
     def setUp(self):
-        self.setor = Setor.objects.create(sigla="GISE", nome="Grupo de Investigações Sensíveis")
+        self.setor, _ = Setor.objects.get_or_create(sigla="GISE", defaults={"nome": "Grupo de Investigações Sensíveis"})
         self.vigilante = Usuario.objects.create_user(
             username="vigilante.teste",
             password="senha123",

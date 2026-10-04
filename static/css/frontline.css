@@ -472,6 +472,22 @@ small, .pf-small {
   font-size: 12px;
 }
 
+.pf-btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pf-btn-sm.pf-btn-icon {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+}
+
 .pf-btn-lg {
   height: 32px;
   padding: 0 var(--space-20, 20px);
@@ -591,30 +607,64 @@ small, .pf-small {
 /* Tabelas Customizadas Frontline (TableCustom) */
 .pf-table-wrapper {
   overflow-x: auto;
-  border: 1px solid var(--pf-grey-200);
+  border: 1px solid var(--pf-grey-300);
   border-radius: 4px;
+  background-color: #FFFFFF;
 }
 
 .pf-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-size: 13px;
+  font-size: 14px;
+}
+
+.pf-table thead {
+  background-color: var(--pf-black);
 }
 
 .pf-table th {
-  background-color: var(--pf-grey-100);
-  color: var(--pf-grey-700);
-  font-weight: 700;
-  padding: 10px 14px;
-  border-bottom: 2px solid var(--pf-grey-300);
+  background-color: var(--pf-black);
+  color: #FFFFFF;
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 16px;
+  padding: 12px 14px;
+  border-bottom: 2px solid var(--pf-gold-500);
   white-space: nowrap;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.pf-table thead tr:first-child th:first-child {
+  border-top-left-radius: 3px;
+}
+
+.pf-table thead tr:first-child th:last-child {
+  border-top-right-radius: 3px;
+}
+
+.pf-table th a {
+  color: #FFFFFF;
+  text-decoration: none;
+}
+
+.pf-table th a:hover {
+  color: var(--pf-gold-400);
+}
+
+.pf-table th i {
+  color: var(--pf-gold-500);
+  margin-right: 4px;
 }
 
 .pf-table td {
   padding: 10px 14px;
   border-bottom: 1px solid var(--pf-grey-200);
   color: var(--pf-grey-700);
+  font-size: 14px;
+  line-height: 16px;
 }
 
 .pf-table tbody tr:nth-child(even) {
@@ -623,6 +673,151 @@ small, .pf-small {
 
 .pf-table tbody tr:hover {
   background-color: var(--pf-blue-100);
+}
+
+/* ==========================================================================
+   PADRÃO OFICIAL FRONTLINE PF — BOTÕES DE AÇÃO EM TABELAS (pf-action-btn)
+   Ações compactas padronizadas apenas com ícone (sem texto), com cores semânticas
+   da identidade visual da Polícia Federal.
+   ========================================================================== */
+
+.pf-table-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* Base do Botão de Ação em Tabelas */
+.pf-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  padding: 0;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  cursor: pointer;
+  background-color: transparent;
+  transition: all 0.15s ease-in-out;
+  line-height: 1;
+  outline: none;
+}
+
+.pf-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.pf-action-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.pf-action-btn i {
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* 1. Visualizar / Detalhes / Acessar Ficha — Azul Institucional PF */
+.pf-action-btn.pf-action-view {
+  color: var(--pf-blue-500);
+  background-color: rgba(51, 99, 204, 0.10);
+  border-color: rgba(51, 99, 204, 0.28);
+}
+.pf-action-btn.pf-action-view:hover {
+  background-color: var(--pf-blue-500);
+  color: #FFFFFF;
+  border-color: var(--pf-blue-500);
+}
+
+/* 2. Editar / Alterar Cadastro — Dourado Oficial PF (Ouro do Brasão) */
+.pf-action-btn.pf-action-edit {
+  color: var(--pf-gold-700);
+  background-color: rgba(225, 173, 98, 0.18);
+  border-color: rgba(225, 173, 98, 0.45);
+}
+.pf-action-btn.pf-action-edit:hover {
+  background-color: var(--pf-gold-500);
+  color: var(--pf-black);
+  border-color: var(--pf-gold-600);
+}
+
+/* 3. Operação Positiva / Retorno de Viatura / Concluir / Ativar — Verde Sucesso PF */
+.pf-action-btn.pf-action-success {
+  color: var(--pf-green-700);
+  background-color: rgba(51, 168, 65, 0.14);
+  border-color: rgba(51, 168, 65, 0.35);
+}
+.pf-action-btn.pf-action-success:hover {
+  background-color: var(--pf-green-500);
+  color: #FFFFFF;
+  border-color: var(--pf-green-600);
+}
+
+/* 4. Manutenção / Serviços / Ordem de Serviço — Dourado / Âmbar PF */
+.pf-action-btn.pf-action-service {
+  color: #946800;
+  background-color: rgba(242, 182, 78, 0.18);
+  border-color: rgba(242, 182, 78, 0.45);
+}
+.pf-action-btn.pf-action-service:hover {
+  background-color: var(--pf-gold-400);
+  color: var(--pf-black);
+  border-color: var(--pf-gold-500);
+}
+
+/* 5. Ação Crítica / Desativar / Bloquear / Excluir — Vermelho Erro/Perigo PF */
+.pf-action-btn.pf-action-danger {
+  color: var(--pf-red-500);
+  background-color: rgba(191, 12, 29, 0.10);
+  border-color: rgba(191, 12, 29, 0.30);
+}
+.pf-action-btn.pf-action-danger:hover {
+  background-color: var(--pf-red-500);
+  color: #FFFFFF;
+  border-color: var(--pf-red-600);
+}
+
+/* 6. Exportação PDF — Vermelho Oficial DPF */
+.pf-action-btn.pf-action-pdf {
+  color: var(--pf-red-500);
+  background-color: rgba(191, 12, 29, 0.10);
+  border-color: rgba(191, 12, 29, 0.30);
+}
+.pf-action-btn.pf-action-pdf:hover {
+  background-color: var(--pf-red-500);
+  color: #FFFFFF;
+  border-color: var(--pf-red-600);
+}
+
+/* 7. Exportação Planilha Excel — Verde Sucesso PF */
+.pf-action-btn.pf-action-excel {
+  color: var(--pf-green-700);
+  background-color: rgba(51, 168, 65, 0.14);
+  border-color: rgba(51, 168, 65, 0.35);
+}
+.pf-action-btn.pf-action-excel:hover {
+  background-color: var(--pf-green-500);
+  color: #FFFFFF;
+  border-color: var(--pf-green-600);
+}
+
+/* 8. Ação Neutra / Secundária — Cinza Corporativo PF */
+.pf-action-btn.pf-action-neutral {
+  color: var(--pf-grey-600);
+  background-color: var(--pf-grey-100);
+  border-color: var(--pf-grey-300);
+}
+.pf-action-btn.pf-action-neutral:hover {
+  background-color: var(--pf-grey-200);
+  color: var(--pf-grey-700);
+  border-color: var(--pf-grey-400);
 }
 
 /* Formulários Frontline (Grid de 8px: label-input 8px, gap 16px) */

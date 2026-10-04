@@ -175,60 +175,62 @@
               {% endif %}
             </td>
             <td style="text-align: right; white-space: nowrap;">
-              {% tem_perm "usuarios.perfis.atribuir" as pode_perfis %}
-              {% if pode_perfis %}
-              <a href="{% url 'usuarios:perfis_gerenciar' u.pk %}" class="btn-acao-icone btn-acao-perfis" title="Gerenciar Perfis de Acesso ({{ u.username }})">
-                <i class="fas fa-user-shield"></i>
-              </a>
-              {% endif %}
+              <div class="pf-table-actions">
+                {% tem_perm "usuarios.perfis.atribuir" as pode_perfis %}
+                {% if pode_perfis %}
+                <a href="{% url 'usuarios:perfis_gerenciar' u.pk %}" class="pf-action-btn pf-action-view" title="Gerenciar Perfis de Acesso ({{ u.username }})" aria-label="Gerenciar Perfis">
+                  <i class="fas fa-user-shield"></i>
+                </a>
+                {% endif %}
 
-              {% tem_perm "usuarios.cadastro.editar" as pode_editar %}
-              {% if pode_editar %}
-              <a href="{% url 'usuarios:editar' u.pk %}" class="btn-acao-icone btn-acao-editar" title="Editar Usuário ({{ u.username }})">
-                <i class="fas fa-pen"></i>
-              </a>
+                {% tem_perm "usuarios.cadastro.editar" as pode_editar %}
+                {% if pode_editar %}
+                <a href="{% url 'usuarios:editar' u.pk %}" class="pf-action-btn pf-action-edit" title="Editar Usuário ({{ u.username }})" aria-label="Editar Usuário">
+                  <i class="fas fa-edit"></i>
+                </a>
 
-              <!-- Botão de Reset de Senha -->
-              <button type="button" class="btn-acao-icone btn-acao-reset" title="Resetar Senha para mudar@123" onclick="document.getElementById('modalReset{{ u.pk }}').showModal()">
-                <i class="fas fa-key"></i>
-              </button>
+                <!-- Botão de Reset de Senha -->
+                <button type="button" class="pf-action-btn pf-action-service" title="Resetar Senha para mudar@123" aria-label="Resetar Senha" onclick="document.getElementById('modalReset{{ u.pk }}').showModal()">
+                  <i class="fas fa-key"></i>
+                </button>
 
-              <dialog id="modalReset{{ u.pk }}" class="dialog-modal" style="border: none; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.25); padding: 24px; width: 90%; max-width: 480px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; text-align: left;">
-                <h3 style="margin-top: 0; color: #B45309; display: flex; align-items: center; gap: 10px;">
-                  <i class="fas fa-key"></i> Resetar Senha de Acesso
-                </h3>
-                <p style="color: var(--pf-grey-800); margin-top: 12px; font-size: 14px;">
-                  Confirma o reset da senha do usuário <strong>{{ u.username }}</strong> ({{ u.get_full_name|default:"Servidor" }})?
-                </p>
-                <div style="background-color: #FEF3C7; border: 1px solid #FDE68A; border-radius: 6px; padding: 12px 16px; margin: 16px 0; font-size: 13px; color: #92400E;">
-                  A nova senha de acesso passará a ser: <strong style="font-size: 15px; font-family: monospace;">mudar@123</strong>
-                </div>
-                <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
-                  <button type="button" class="pf-btn pf-btn-secondary" onclick="document.getElementById('modalReset{{ u.pk }}').close()">Cancelar</button>
-                  <form method="post" action="{% url 'usuarios:resetar_senha' u.pk %}" style="display: inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="pf-btn" style="background-color: #B45309; border-color: #B45309; color: #fff;">
-                      <i class="fas fa-check"></i> Confirmar Reset
-                    </button>
-                  </form>
-                </div>
-              </dialog>
-              {% endif %}
+                <dialog id="modalReset{{ u.pk }}" class="dialog-modal" style="border: none; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.25); padding: 24px; width: 90%; max-width: 480px; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; text-align: left;">
+                  <h3 style="margin-top: 0; color: #B45309; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-key"></i> Resetar Senha de Acesso
+                  </h3>
+                  <p style="color: var(--pf-grey-800); margin-top: 12px; font-size: 14px;">
+                    Confirma o reset da senha do usuário <strong>{{ u.username }}</strong> ({{ u.get_full_name|default:"Servidor" }})?
+                  </p>
+                  <div style="background-color: #FEF3C7; border: 1px solid #FDE68A; border-radius: 6px; padding: 12px 16px; margin: 16px 0; font-size: 13px; color: #92400E;">
+                    A nova senha de acesso passará a ser: <strong style="font-size: 15px; font-family: monospace;">mudar@123</strong>
+                  </div>
+                  <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+                    <button type="button" class="pf-btn pf-btn-secondary" onclick="document.getElementById('modalReset{{ u.pk }}').close()">Cancelar</button>
+                    <form method="post" action="{% url 'usuarios:resetar_senha' u.pk %}" style="display: inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="pf-btn" style="background-color: #B45309; border-color: #B45309; color: #fff;">
+                        <i class="fas fa-check"></i> Confirmar Reset
+                      </button>
+                    </form>
+                  </div>
+                </dialog>
+                {% endif %}
 
-              {% if u != request.user %}
-                {% tem_perm "usuarios.cadastro.toggle_ativo" as pode_toggle %}
-                {% if pode_toggle %}
-                  {% if u.is_active %}
-                  <a href="{% url 'usuarios:toggle_ativo' u.pk %}" class="btn-acao-icone btn-acao-desativar" title="Desativar Conta ({{ u.username }})">
-                    <i class="fas fa-user-slash"></i>
-                  </a>
-                  {% else %}
-                  <a href="{% url 'usuarios:toggle_ativo' u.pk %}" class="btn-acao-icone btn-acao-ativar" title="Ativar Conta ({{ u.username }})">
-                    <i class="fas fa-user-check"></i>
-                  </a>
+                {% if u != request.user %}
+                  {% tem_perm "usuarios.cadastro.toggle_ativo" as pode_toggle %}
+                  {% if pode_toggle %}
+                    {% if u.is_active %}
+                    <a href="{% url 'usuarios:toggle_ativo' u.pk %}" class="pf-action-btn pf-action-danger" title="Desativar Conta ({{ u.username }})" aria-label="Desativar Usuário">
+                      <i class="fas fa-user-slash"></i>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'usuarios:toggle_ativo' u.pk %}" class="pf-action-btn pf-action-success" title="Ativar Conta ({{ u.username }})" aria-label="Ativar Usuário">
+                      <i class="fas fa-user-check"></i>
+                    </a>
+                    {% endif %}
                   {% endif %}
                 {% endif %}
-              {% endif %}
+              </div>
             </td>
           </tr>
         {% empty %}
