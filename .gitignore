@@ -11,6 +11,7 @@ __pycache__/
 # SQLite Databases
 *.sqlite3
 database/*.sqlite3
+database/*
 
 
 # C extensions
