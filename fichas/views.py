@@ -2,11 +2,12 @@ from datetime import date, datetime
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from accesscontrol.decorators import requer_permissao
+from services.consulta_placa import consultar_placa, normalizar_placa
 from services.relatorios_excel import gerar_excel_ficha
 from services.relatorios_pdf import gerar_pdf_ficha
 from veiculos.models import Viatura
@@ -520,3 +521,71 @@ def exportar_ficha_excel(request, pk):
 # Mantém compatibilidade com @login_required para a view de listagem básica
 # que pode ser acessada por qualquer usuário autenticado que tenha visualizar
 ficha_lista.login_required = True
+
+
+@login_required
+def api_consulta_placa(request):
+    """
+    Endpoint AJAX para consulta em tempo real da placa de um veículo.
+    Retorna os dados cadastrais (marca, modelo, cor, procedência da frota ou API)
+    e identifica se o veículo já se encontra em trânsito (na rua) para sugerir
+    o fechamento automático do retorno.
+    """
+    placa_raw = request.GET.get("placa", "").strip()
+    if not placa_raw:
+        return JsonResponse({"sucesso": False, "mensagem": "Informe a placa do veículo."})
+
+    placa_normalizada = normalizar_placa(placa_raw)
+    resultado = consultar_placa(placa_normalizada)
+    dados = resultado.to_dict()
+
+    # Informações adicionais do banco local se a viatura existir
+    viatura = Viatura.objects.filter(placa=placa_normalizada).first()
+    if viatura:
+        dados["viatura_id"] = viatura.pk
+        dados["eh_frota"] = viatura.eh_frota
+        dados["classificacao"] = viatura.classificacao
+        dados["classificacao_display"] = viatura.get_classificacao_display()
+        dados["status_viatura"] = viatura.status
+        dados["km_atual"] = viatura.km_atual
+        dados["setor"] = viatura.setor_pertencente.sigla if viatura.setor_pertencente else ""
+        dados["responsavel"] = viatura.identificacao_responsavel
+        if not dados["marca"]:
+            dados["marca"] = viatura.marca
+        if not dados["modelo"]:
+            dados["modelo"] = viatura.modelo
+    else:
+        dados["viatura_id"] = None
+        dados["eh_frota"] = False
+        dados["classificacao"] = Viatura.CLASSIFICACAO_PENDENTE
+        dados["classificacao_display"] = "Aguardando Classificação"
+        dados["status_viatura"] = Viatura.STATUS_DISPONIVEL
+        dados["km_atual"] = 0
+        dados["setor"] = ""
+        dados["responsavel"] = ""
+
+    # Verifica se há saída em trânsito (na rua) para esta placa
+    saida_aberta = RegistroUso.objects.filter(
+        viatura__placa=placa_normalizada,
+        status=RegistroUso.STATUS_EM_TRANSITO
+    ).select_related("ficha").order_by("-data_saida", "-horario_saida", "-id").first()
+
+    if saida_aberta:
+        dados["em_transito"] = True
+        dados["saida_origem_id"] = saida_aberta.pk
+        dados["saida_pendente_id"] = saida_aberta.pk
+        dados["ficha_origem"] = f"Ficha {saida_aberta.ficha.data_expediente.strftime('%d/%m/%Y')} (#{saida_aberta.ficha.pk})"
+        dados["km_saida"] = saida_aberta.odometro_saida or dados["km_atual"]
+        dados["data_saida"] = saida_aberta.data_saida.strftime("%Y-%m-%d") if saida_aberta.data_saida else ""
+        dados["data_saida_display"] = saida_aberta.data_saida.strftime("%d/%m/%Y") if saida_aberta.data_saida else ""
+        dados["horario_saida"] = saida_aberta.horario_saida.strftime("%H:%M") if saida_aberta.horario_saida else ""
+        dados["condutor_saida"] = saida_aberta.condutor or ""
+        dados["destino_saida"] = saida_aberta.destino or ""
+    else:
+        dados["em_transito"] = False
+        dados["saida_origem_id"] = None
+        dados["saida_pendente_id"] = None
+        dados["km_saida"] = dados["km_atual"]
+
+    return JsonResponse(dados)
+

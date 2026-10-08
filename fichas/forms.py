@@ -2,6 +2,7 @@ from datetime import date, datetime, time
 
 from django import forms
 
+from services.consulta_placa import consultar_placa, normalizar_placa, validar_formato_placa
 from veiculos.models import Viatura
 
 from .models import FichaControle, RegistroUso
@@ -99,11 +100,21 @@ class FichaControleForm(forms.ModelForm):
 
 
 class RegistroSaidaForm(forms.ModelForm):
+    placa = forms.CharField(
+        label="Placa do Veículo",
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "pf-input", "id": "id_placa_saida", "placeholder": "Ex: BRA2E19 ou ABC-1234", "style": "text-transform: uppercase;"}),
+    )
+    marca = forms.CharField(label="Marca", max_length=50, required=False, widget=forms.TextInput(attrs={"class": "pf-input", "id": "id_marca_saida"}))
+    modelo = forms.CharField(label="Modelo", max_length=80, required=False, widget=forms.TextInput(attrs={"class": "pf-input", "id": "id_modelo_saida"}))
+    cor = forms.CharField(label="Cor", max_length=30, required=False, widget=forms.TextInput(attrs={"class": "pf-input", "id": "id_cor_saida"}))
+
     class Meta:
         model = RegistroUso
         fields = ["viatura", "condutor", "destino", "data_saida", "horario_saida", "odometro_saida"]
         widgets = {
-            "viatura": forms.Select(attrs={"class": "pf-select"}),
+            "viatura": forms.Select(attrs={"class": "pf-select", "id": "id_select_viatura"}),
             "condutor": forms.TextInput(attrs={"class": "pf-input", "placeholder": "Nome e matrícula do condutor"}),
             "destino": forms.TextInput(attrs={"class": "pf-input", "placeholder": "Destino / Missão / Operação"}),
             "data_saida": forms.DateInput(attrs={"class": "pf-input", "type": "date"}),
@@ -113,14 +124,65 @@ class RegistroSaidaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["viatura"].required = False
         # Permite selecionar apenas viaturas ativas e disponíveis (ou a viatura já associada se for edição)
         if self.instance.pk:
             self.fields["viatura"].queryset = Viatura.objects.filter(ativo=True)
+            if self.instance.viatura:
+                self.initial["placa"] = self.instance.viatura.placa
+                self.initial["marca"] = self.instance.viatura.marca
+                self.initial["modelo"] = self.instance.viatura.modelo
+                self.initial["cor"] = self.instance.viatura.cor
         else:
             self.fields["viatura"].queryset = Viatura.objects.filter(ativo=True, status=Viatura.STATUS_DISPONIVEL)
             # Define hora atual padrão
             self.initial["data_saida"] = datetime.now().strftime("%Y-%m-%d")
             self.initial["horario_saida"] = datetime.now().strftime("%H:%M")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        viatura = cleaned_data.get("viatura")
+        placa = normalizar_placa(cleaned_data.get("placa") or "")
+
+        if not viatura and placa:
+            if not validar_formato_placa(placa):
+                self.add_error("placa", "Formato de placa inválido. Use o padrão Mercosul (ex: BRA2E19) ou antigo (ABC1234).")
+                return cleaned_data
+
+            viatura = Viatura.objects.filter(placa=placa).first()
+            if not viatura:
+                marca = (cleaned_data.get("marca") or "").strip()
+                modelo = (cleaned_data.get("modelo") or "").strip()
+                cor = (cleaned_data.get("cor") or "").strip()
+
+                if not (marca and modelo):
+                    res = consultar_placa(placa)
+                    if res.sucesso:
+                        marca = res.marca
+                        modelo = res.modelo
+                        cor = res.cor or cor
+
+                if not (marca and modelo):
+                    self.add_error("marca", "Marca e modelo não identificados. Preencha os campos manualmente para contingência.")
+                    return cleaned_data
+
+                viatura = Viatura.objects.create(
+                    placa=placa,
+                    marca=marca.title(),
+                    modelo=modelo,
+                    cor=cor or "Preta",
+                    classificacao=Viatura.CLASSIFICACAO_PENDENTE,
+                    origem_dados=Viatura.ORIGEM_API if marca else Viatura.ORIGEM_MANUAL,
+                    status=Viatura.STATUS_DISPONIVEL,
+                )
+
+            cleaned_data["viatura"] = viatura
+            self.instance.viatura = viatura
+
+        if not cleaned_data.get("viatura"):
+            self.add_error("placa", "Informe a placa do veículo ou selecione uma viatura cadastrada.")
+
+        return cleaned_data
 
 
 class RegistroChegadaForm(forms.ModelForm):
@@ -408,11 +470,36 @@ class RegistroMovimentacaoForm(forms.Form):
     ]
 
     viatura = forms.ModelChoiceField(
-        label="Viatura",
+        label="Viatura da Frota",
         queryset=Viatura.objects.filter(ativo=True).order_by("status", "marca", "modelo"),
         widget=forms.Select(attrs={"class": "pf-select", "id": "id_viatura"}),
-        help_text="Selecione o veículo da frota",
-        required=True,
+        help_text="Selecione da lista ou informe a placa abaixo",
+        required=False,
+    )
+    placa = forms.CharField(
+        label="Placa do Veículo",
+        max_length=10,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "pf-input", "id": "id_placa_input", "placeholder": "Ex: BRA2E19 ou ABC-1234", "autocomplete": "off", "style": "text-transform: uppercase;"}),
+        help_text="Digite a placa para preenchimento automático",
+    )
+    marca = forms.CharField(
+        label="Marca",
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "pf-input", "id": "id_marca_input", "placeholder": "Ex: Toyota, Chevrolet"}),
+    )
+    modelo = forms.CharField(
+        label="Modelo",
+        max_length=80,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "pf-input", "id": "id_modelo_input", "placeholder": "Ex: Hilux 4x4, Trailblazer"}),
+    )
+    cor = forms.CharField(
+        label="Cor",
+        max_length=30,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "pf-input", "id": "id_cor_input", "placeholder": "Ex: Branca, Preta"}),
     )
     tipo_movimentacao = forms.ChoiceField(
         label="Tipo de Movimentação",
@@ -490,6 +577,7 @@ class RegistroMovimentacaoForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.ficha = kwargs.pop("ficha", None)
         super().__init__(*args, **kwargs)
+        self.fields["viatura"].required = False
 
         hoje_str = datetime.now().strftime("%Y-%m-%d")
         hora_str = datetime.now().strftime("%H:%M")
@@ -506,11 +594,48 @@ class RegistroMovimentacaoForm(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         viatura = cleaned_data.get("viatura")
-        tipo = cleaned_data.get("tipo_movimentacao")
+        placa = normalizar_placa(cleaned_data.get("placa") or "")
+
+        # Se a viatura não foi selecionada pelo select, resolve via placa informada
+        if not viatura and placa:
+            if not validar_formato_placa(placa):
+                self.add_error("placa", "Formato de placa inválido. Use o padrão Mercosul (ex: BRA2E19) ou antigo (ABC1234).")
+                return cleaned_data
+
+            viatura = Viatura.objects.filter(placa=placa).first()
+            if not viatura:
+                marca = (cleaned_data.get("marca") or "").strip()
+                modelo = (cleaned_data.get("modelo") or "").strip()
+                cor = (cleaned_data.get("cor") or "").strip()
+
+                if not (marca and modelo):
+                    res = consultar_placa(placa)
+                    if res.sucesso:
+                        marca = res.marca
+                        modelo = res.modelo
+                        cor = res.cor or cor
+
+                if not (marca and modelo):
+                    self.add_error("marca", "Marca e modelo não identificados automaticamente. Preencha os campos para contingência.")
+                    return cleaned_data
+
+                viatura = Viatura.objects.create(
+                    placa=placa,
+                    marca=marca.title(),
+                    modelo=modelo,
+                    cor=cor or "Preta",
+                    classificacao=Viatura.CLASSIFICACAO_PENDENTE,
+                    origem_dados=Viatura.ORIGEM_API if marca else Viatura.ORIGEM_MANUAL,
+                    status=Viatura.STATUS_DISPONIVEL,
+                )
+
+            cleaned_data["viatura"] = viatura
 
         if not viatura:
+            self.add_error("placa", "Informe a placa do veículo ou selecione uma viatura cadastrada.")
             return cleaned_data
 
+        tipo = cleaned_data.get("tipo_movimentacao")
         # Se tipo não foi informado, infere automaticamente pelo status da viatura
         if not tipo:
             tipo = self.TIPO_CHEGADA if viatura.status == Viatura.STATUS_EM_USO else self.TIPO_SAIDA

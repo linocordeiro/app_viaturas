@@ -117,9 +117,15 @@
       <li class="pf-menu-section-title">GESTÃO DE FROTA</li>
       {% if pode_viaturas %}
       <li class="pf-menu-item">
-        <a href="{% url 'veiculos:lista' %}" class="pf-menu-link {% if request.resolver_match.app_name == 'veiculos' and not 'manutencao' in request.path %}active{% endif %}">
+        <a href="{% url 'veiculos:lista' %}" class="pf-menu-link {% if request.resolver_match.app_name == 'veiculos' and not 'manutencao' in request.path and not 'classificacao' in request.path and not 'configuracao' in request.path %}active{% endif %}">
           <i class="fas fa-car-side"></i>
           <span>Viaturas</span>
+        </a>
+      </li>
+      <li class="pf-menu-item">
+        <a href="{% url 'veiculos:classificacao_lista' %}" class="pf-menu-link {% if 'classificacao' in request.path %}active{% endif %}">
+          <i class="fas fa-tags"></i>
+          <span>Classificação de Veículos</span>
         </a>
       </li>
       {% endif %}
@@ -140,6 +146,12 @@
         <a href="{% url 'usuarios:lista' %}" class="pf-menu-link {% if request.resolver_match.app_name == 'usuarios' %}active{% endif %}">
           <i class="fas fa-users-cog"></i>
           <span>Usuários e Acessos</span>
+        </a>
+      </li>
+      <li class="pf-menu-item">
+        <a href="{% url 'veiculos:configuracao_placa' %}" class="pf-menu-link {% if 'configuracao/consulta-placa' in request.path %}active{% endif %}">
+          <i class="fas fa-satellite-dish"></i>
+          <span>Integração de Placas</span>
         </a>
       </li>
       {% endif %}

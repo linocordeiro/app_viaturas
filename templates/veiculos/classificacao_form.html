@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+
+{% block title %}Classificar Veículo {{ viatura.placa }}{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <a href="{% url 'veiculos:classificacao_lista' %}">Classificação de Veículos</a>
+  <span>/</span>
+  <strong>{{ viatura.placa }}</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2>Classificar Veículo: {{ viatura.placa }}</h2>
+    <p>Definição de pertencimento à frota oficial, setor de lotação e servidor responsável (NUTRAN)</p>
+  </div>
+  <div>
+    <a href="{% url 'veiculos:classificacao_lista' %}" class="pf-btn pf-btn-secondary">
+      <i class="fas fa-arrow-left"></i> Voltar à Lista
+    </a>
+  </div>
+</div>
+
+{% if viatura.divergencia_dados %}
+<div class="pf-alert pf-alert-warning" style="margin-bottom: var(--space-24);">
+  <i class="fas fa-exclamation-triangle"></i>
+  <div>
+    <strong>Aviso de Divergência com Consulta Externa:</strong><br>
+    {{ viatura.divergencia_dados }}
+  </div>
+</div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-24);">
+  <!-- Formulário de Classificação -->
+  <div class="pf-card">
+    <div class="pf-card-header">
+      <div class="pf-card-title">
+        <i class="fas fa-shield-alt"></i> Dados de Enquadramento e Responsabilidade
+      </div>
+    </div>
+
+    <form method="post" class="pf-form">
+      {% csrf_token %}
+
+      <div class="pf-form-row" style="margin-bottom: var(--space-16);">
+        <div class="pf-form-group">
+          <label class="pf-label">Classificação do Veículo *</label>
+          {{ form.classificacao }}
+          <small class="pf-form-help">Selecione se é viatura oficial da unidade ou veículo externo (outra delegacia, parceiro ou visitante).</small>
+          {% if form.classificacao.errors %}<div class="pf-error-message">{{ form.classificacao.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="pf-form-group" id="grupo_setor">
+          <label class="pf-label">Setor de Lotação Oficial *</label>
+          {{ form.setor_pertencente }}
+          <small class="pf-form-help">Unidade / Delegacia à qual o veículo está vinculado.</small>
+          {% if form.setor_pertencente.errors %}<div class="pf-error-message">{{ form.setor_pertencente.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="pf-form-row" style="margin-bottom: var(--space-16);" id="grupo_responsavel">
+        <div class="pf-form-group">
+          <label class="pf-label">Nome do Servidor Responsável *</label>
+          {{ form.responsavel_nome }}
+          <small class="pf-form-help">Servidor formalmente encarregado pelo zelo da viatura.</small>
+          {% if form.responsavel_nome.errors %}<div class="pf-error-message">{{ form.responsavel_nome.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="pf-form-group">
+          <label class="pf-label">Cargo / Função do Responsável</label>
+          {{ form.responsavel_cargo }}
+          <small class="pf-form-help">Ex: Agente de Polícia Federal, Escrivão, Chefe de Cartório.</small>
+          {% if form.responsavel_cargo.errors %}<div class="pf-error-message">{{ form.responsavel_cargo.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="pf-form-row" style="margin-bottom: var(--space-16);">
+        <div class="pf-form-group">
+          <label class="pf-label">Tipo de Viatura</label>
+          {{ form.tipo }}
+          {% if form.tipo.errors %}<div class="pf-error-message">{{ form.tipo.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="pf-form-group">
+          <label class="pf-label">Cor</label>
+          {{ form.cor }}
+          {% if form.cor.errors %}<div class="pf-error-message">{{ form.cor.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="pf-form-row" style="margin-bottom: var(--space-16);">
+        <div class="pf-form-group">
+          <label class="pf-label">Ano Fabricação</label>
+          {{ form.ano_fabricacao }}
+          {% if form.ano_fabricacao.errors %}<div class="pf-error-message">{{ form.ano_fabricacao.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="pf-form-group">
+          <label class="pf-label">Ano Modelo</label>
+          {{ form.ano_modelo }}
+          {% if form.ano_modelo.errors %}<div class="pf-error-message">{{ form.ano_modelo.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="pf-form-group">
+          <label class="pf-label">Chassi</label>
+          {{ form.chassi }}
+          {% if form.chassi.errors %}<div class="pf-error-message">{{ form.chassi.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="pf-form-group" style="margin-bottom: var(--space-24);">
+        <label class="pf-label">Observações Institucionais</label>
+        {{ form.observacoes }}
+        <small class="pf-form-help">Informações adicionais sobre origem, convênio ou destinação do veículo.</small>
+        {% if form.observacoes.errors %}<div class="pf-error-message">{{ form.observacoes.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div style="display: flex; gap: var(--space-16); justify-content: flex-end;">
+        <a href="{% url 'veiculos:classificacao_lista' %}" class="pf-btn pf-btn-secondary">
+          Cancelar
+        </a>
+        <button type="submit" class="pf-btn pf-btn-primary">
+          <i class="fas fa-check"></i> Salvar Classificação
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Painel Lateral: Resumo do Veículo -->
+  <div>
+    <div class="pf-card" style="margin-bottom: var(--space-24);">
+      <div class="pf-card-header">
+        <div class="pf-card-title">
+          <i class="fas fa-info-circle"></i> Ficha do Veículo
+        </div>
+      </div>
+      <div style="padding: var(--space-8) 0;">
+        <div style="margin-bottom: var(--space-16); text-align: center;">
+          <span style="display: inline-block; padding: 4px 12px; border: 2px solid #111213; border-radius: 4px; font-weight: 700; font-size: 1.25rem; letter-spacing: 2px; background: #FFF;">
+            {{ viatura.placa }}
+          </span>
+          <div style="margin-top: var(--space-8); font-size: 1.1rem; font-weight: 600;">
+            {{ viatura.marca }} {{ viatura.modelo }}
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+          <tr style="border-bottom: 1px solid var(--pf-grey-200);">
+            <td style="padding: 8px 0; color: var(--pf-grey-600);">Origem dos Dados:</td>
+            <td style="padding: 8px 0; text-align: right; font-weight: 500;">{{ viatura.get_origem_dados_display }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--pf-grey-200);">
+            <td style="padding: 8px 0; color: var(--pf-grey-600);">Status Operacional:</td>
+            <td style="padding: 8px 0; text-align: right; font-weight: 500;">{{ viatura.get_status_display }}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--pf-grey-200);">
+            <td style="padding: 8px 0; color: var(--pf-grey-600);">Odômetro Atual:</td>
+            <td style="padding: 8px 0; text-align: right; font-weight: 500;">{{ viatura.km_atual|default:0 }} km</td>
+          </tr>
+          {% if viatura.classificado_por %}
+          <tr>
+            <td style="padding: 8px 0; color: var(--pf-grey-600);">Classificado por:</td>
+            <td style="padding: 8px 0; text-align: right; font-weight: 500;">
+              {{ viatura.classificado_por.get_full_name|default:viatura.classificado_por.username }}
+              <br><small style="color: var(--pf-grey-500);">{{ viatura.classificado_em|date:"d/m/Y H:i" }}</small>
+            </td>
+          </tr>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+
+    <!-- Histórico Recente de Entradas/Saídas -->
+    <div class="pf-card">
+      <div class="pf-card-header">
+        <div class="pf-card-title">
+          <i class="fas fa-history"></i> Últimos Registros
+        </div>
+      </div>
+      <div style="font-size: 0.85rem;">
+        {% for reg in registros %}
+        <div style="padding: var(--space-8) 0; border-bottom: 1px solid var(--pf-grey-200);">
+          <div>
+            <strong>Ficha {{ reg.ficha.data_expediente|date:"d/m/Y" }}</strong>
+            <span class="pf-badge pf-badge-secondary" style="font-size: 0.75rem;">{{ reg.get_tipo_movimentacao_display }}</span>
+          </div>
+          <div style="color: var(--pf-grey-600); margin-top: 2px;">
+            Condutor: {{ reg.condutor }}
+          </div>
+        </div>
+        {% empty %}
+        <p style="color: var(--pf-grey-500); text-align: center; margin: var(--space-16) 0;">
+          Sem movimentações registradas recentemente.
+        </p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Oculta/exibe campos específicos dependendo da classificação
+  document.addEventListener("DOMContentLoaded", function() {
+    const selectClassificacao = document.getElementById("id_classificacao");
+    const grupoSetor = document.getElementById("grupo_setor");
+    const grupoResponsavel = document.getElementById("grupo_responsavel");
+
+    function atualizarVisibilidade() {
+      if (selectClassificacao.value === "EXTERNA") {
+        if (grupoSetor) grupoSetor.style.opacity = "0.6";
+        if (grupoResponsavel) grupoResponsavel.style.opacity = "0.6";
+      } else {
+        if (grupoSetor) grupoSetor.style.opacity = "1";
+        if (grupoResponsavel) grupoResponsavel.style.opacity = "1";
+      }
+    }
+
+    selectClassificacao.addEventListener("change", atualizarVisibilidade);
+    atualizarVisibilidade();
+  });
+</script>
+{% endblock %}

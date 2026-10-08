@@ -51,7 +51,7 @@
 
     <div class="pf-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
       <div class="pf-card-title">
-        <i class="fas fa-car"></i> 1. Identificação da Viatura
+        <i class="fas fa-car"></i> 1. Identificação do Veículo / Viatura
       </div>
       <div style="display: flex; gap: 10px; font-size: 13px;">
         <span class="pf-badge pf-badge-success" title="Viaturas no pátio prontas para saída">
@@ -63,13 +63,54 @@
       </div>
     </div>
 
-    <div class="pf-form-grid">
-      <div class="col-12">
-        <div class="pf-field">
-          <label for="{{ form.viatura.id_for_label }}" class="required">{{ form.viatura.label }}</label>
+    <!-- Entrada Direta por Placa com Consulta Externa Automática -->
+    <div style="background: #F8FAFD; border: 1px solid var(--pf-blue-200); border-radius: 6px; padding: var(--space-16); margin-bottom: var(--space-16);">
+      <div class="pf-form-grid" style="align-items: flex-end;">
+        <div class="col-4">
+          <div class="pf-field">
+            <label for="id_placa_input" class="required">Placa do Veículo</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" name="placa" id="id_placa_input" class="pf-input" placeholder="Ex: BRA2E19 ou ABC1234" maxlength="8" style="text-transform: uppercase; font-weight: 700; letter-spacing: 1px; font-size: 1.1rem;" autocomplete="off" value="{{ form.placa.value|default:'' }}">
+              <button type="button" id="btnConsultarPlaca" class="pf-btn pf-btn-primary" title="Consultar dados da placa" style="padding: 0 16px;">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+            <small class="pf-small">Digite a placa Mercosul ou padrão antigo.</small>
+            {% if form.placa.errors %}<div class="pf-error-text">{{ form.placa.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="col-4">
+          <div class="pf-field">
+            <label for="id_marca_input">Marca</label>
+            <input type="text" name="marca" id="id_marca_input" class="pf-input" placeholder="Marca (preenchimento automático)" value="{{ form.marca.value|default:'' }}">
+            {% if form.marca.errors %}<div class="pf-error-text">{{ form.marca.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="col-4">
+          <div class="pf-field">
+            <label for="id_modelo_input">Modelo</label>
+            <input type="text" name="modelo" id="id_modelo_input" class="pf-input" placeholder="Modelo do veículo" value="{{ form.modelo.value|default:'' }}">
+            <input type="hidden" name="cor" id="id_cor_input" value="{{ form.cor.value|default:'' }}">
+            {% if form.modelo.errors %}<div class="pf-error-text">{{ form.modelo.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Badge de Origem da Identificação -->
+      <div id="badgeOrigemConsulta" style="display: none; margin-top: var(--space-8); font-size: 0.85rem;">
+        <span id="badgeOrigemTexto" class="pf-badge pf-badge-secondary"></span>
+        <span id="badgeOrigemMsg" style="margin-left: 8px; color: var(--pf-grey-600);"></span>
+      </div>
+
+      <!-- Alternativa: Selecionar viatura já cadastrada da frota -->
+      <div style="margin-top: var(--space-12); padding-top: var(--space-8); border-top: 1px dashed var(--pf-grey-300);">
+        <small style="color: var(--pf-grey-600); cursor: pointer;" id="toggleSelectFrota">
+          <i class="fas fa-caret-right"></i> Ou selecione diretamente da frota oficial cadastrada...
+        </small>
+        <div id="containerSelectFrota" style="display: none; margin-top: 8px;">
           {{ form.viatura }}
-          <small class="pf-small">Selecione o veículo da frota. O sistema detectará automaticamente se trata-se de <strong>Saída</strong> ou <strong>Retorno</strong>.</small>
-          {% if form.viatura.errors %}<div class="pf-error-text">{{ form.viatura.errors.0 }}</div>{% endif %}
         </div>
       </div>
     </div>
@@ -251,6 +292,18 @@
   document.addEventListener("DOMContentLoaded", function() {
     var viaturasMap = {{ viaturas_map|safe }};
     var selectViatura = document.getElementById("id_viatura");
+    var inputPlaca = document.getElementById("id_placa_input");
+    var inputMarca = document.getElementById("id_marca_input");
+    var inputModelo = document.getElementById("id_modelo_input");
+    var inputCor = document.getElementById("id_cor_input");
+    var btnConsultar = document.getElementById("btnConsultarPlaca");
+    var badgeContainer = document.getElementById("badgeOrigemConsulta");
+    var badgeTexto = document.getElementById("badgeOrigemTexto");
+    var badgeMsg = document.getElementById("badgeOrigemMsg");
+
+    var toggleSelectFrota = document.getElementById("toggleSelectFrota");
+    var containerSelectFrota = document.getElementById("containerSelectFrota");
+
     var inputTipo = document.getElementById("id_tipo_movimentacao");
     var inputSaidaOrigem = document.getElementById("id_registro_saida_origem");
 
@@ -275,6 +328,19 @@
 
     var checkAvarias = document.getElementById("id_possui_avarias");
     var campoAvariasTexto = document.getElementById("campoAvariasTexto");
+
+    // Toggle de exibição do select da frota
+    if (toggleSelectFrota && containerSelectFrota) {
+      toggleSelectFrota.addEventListener("click", function() {
+        if (containerSelectFrota.style.display === "none") {
+          containerSelectFrota.style.display = "block";
+          toggleSelectFrota.innerHTML = '<i class="fas fa-caret-down"></i> Ocultar lista da frota';
+        } else {
+          containerSelectFrota.style.display = "none";
+          toggleSelectFrota.innerHTML = '<i class="fas fa-caret-right"></i> Ou selecione diretamente da frota oficial cadastrada...';
+        }
+      });
+    }
 
     // Toggle de campo de avarias
     if (checkAvarias) {
@@ -302,109 +368,175 @@
       }
     }
 
-    function atualizarInterface() {
-      var viaturaId = selectViatura.value;
-      if (!viaturaId || !viaturasMap[viaturaId]) {
-        bannerStatus.style.display = "none";
-        painelSaidaOrigem.style.display = "none";
-        secaoSaida.style.display = "none";
-        secaoRetorno.style.display = "none";
-        btnSubmit.disabled = true;
-        btnSubmit.style.opacity = "0.6";
-        btnSubmit.style.cursor = "not-allowed";
-        btnSubmit.innerHTML = '<i class="fas fa-check"></i> Selecione uma Viatura';
-        btnSubmit.className = "pf-btn pf-btn-primary";
-        return;
+    // Consulta de Placa via AJAX
+    function executarConsultaPlaca() {
+      var placaRaw = inputPlaca.value.trim().toUpperCase();
+      if (!placaRaw || placaRaw.length < 7) return;
+
+      btnConsultar.disabled = true;
+      btnConsultar.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+      badgeContainer.style.display = "block";
+      badgeTexto.className = "pf-badge pf-badge-secondary";
+      badgeTexto.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Consultando...';
+      badgeMsg.textContent = "Buscando dados na base e na API externa...";
+
+      fetch("{% url 'fichas:api_consulta_placa' %}?placa=" + encodeURIComponent(placaRaw))
+        .then(function(resp) { return resp.json(); })
+        .then(function(dados) {
+          btnConsultar.disabled = false;
+          btnConsultar.innerHTML = '<i class="fas fa-search"></i>';
+
+          if (dados.sucesso || dados.marca) {
+            if (dados.marca) inputMarca.value = dados.marca;
+            if (dados.modelo) inputModelo.value = dados.modelo;
+            if (dados.cor) inputCor.value = dados.cor;
+
+            if (dados.origem === "FROTA") {
+              badgeTexto.className = "pf-badge pf-badge-success";
+              badgeTexto.innerHTML = '<i class="fas fa-shield-alt"></i> Frota Oficial';
+            } else if (dados.origem === "CACHE") {
+              badgeTexto.className = "pf-badge pf-badge-info";
+              badgeTexto.innerHTML = '<i class="fas fa-database"></i> Histórico Local';
+            } else {
+              badgeTexto.className = "pf-badge pf-badge-success";
+              badgeTexto.innerHTML = '<i class="fas fa-cloud-check"></i> ' + (dados.provedor || 'API');
+            }
+            badgeMsg.textContent = dados.mensagem || "Veículo identificado com sucesso.";
+          } else {
+            badgeTexto.className = "pf-badge pf-badge-warning";
+            badgeTexto.innerHTML = '<i class="fas fa-keyboard"></i> Contingência';
+            badgeMsg.textContent = dados.mensagem || "API indisponível. Preencha marca e modelo manualmente.";
+          }
+
+          // Se a placa estiver em trânsito (na rua), ativa o fluxo de Retorno
+          if (dados.em_transito) {
+            configurarFluxoRetorno(dados);
+          } else {
+            configurarFluxoSaida(dados);
+          }
+        })
+        .catch(function(err) {
+          btnConsultar.disabled = false;
+          btnConsultar.innerHTML = '<i class="fas fa-search"></i>';
+          badgeContainer.style.display = "block";
+          badgeTexto.className = "pf-badge pf-badge-warning";
+          badgeTexto.innerHTML = '<i class="fas fa-keyboard"></i> Modo Contingência';
+          badgeMsg.textContent = "Servidor externo inacessível. Preencha marca e modelo manualmente.";
+          configurarFluxoSaida({ placa: placaRaw, modelo: inputModelo.value || "Veículo", km_atual: 0 });
+        });
+    }
+
+    function configurarFluxoSaida(dados) {
+      inputTipo.value = "SAIDA";
+      inputSaidaOrigem.value = "";
+
+      bannerStatus.style.display = "block";
+      bannerStatus.style.background = "#EFF6FF";
+      bannerStatus.style.borderColor = "#2563EB";
+      bannerStatus.style.color = "#1E40AF";
+      iconeStatus.className = "fas fa-key";
+      iconeStatus.style.color = "#2563EB";
+      tituloStatus.textContent = "VEÍCULO NO PÁTIO — FLUXO DE SAÍDA";
+      descricaoStatus.textContent = (dados.marca ? dados.marca + " " : "") + (dados.modelo || "") + " (" + dados.placa + ") pronto para registro de saída.";
+
+      painelSaidaOrigem.style.display = "none";
+      secaoSaida.style.display = "block";
+      secaoRetorno.style.display = "none";
+
+      var km = dados.km_atual || 0;
+      if (inputOdometroSaida && (!inputOdometroSaida.value || inputOdometroSaida.value == "0")) {
+        inputOdometroSaida.value = km;
+      }
+      if (helpKmSaida) {
+        helpKmSaida.textContent = "KM de referência: " + km.toLocaleString("pt-BR") + " km.";
       }
 
-      var v = viaturasMap[viaturaId];
       btnSubmit.disabled = false;
       btnSubmit.style.opacity = "1";
       btnSubmit.style.cursor = "pointer";
+      btnSubmit.className = "pf-btn pf-btn-gold";
+      btnSubmit.innerHTML = '<i class="fas fa-key"></i> Confirmar Saída do Veículo';
+    }
 
-      if (v.status === "DISPONIVEL") {
-        // FLUXO DE SAÍDA
-        inputTipo.value = "SAIDA";
-        inputSaidaOrigem.value = "";
+    function configurarFluxoRetorno(dados) {
+      inputTipo.value = "CHEGADA";
 
-        bannerStatus.style.display = "block";
-        bannerStatus.style.background = "#EFF6FF";
-        bannerStatus.style.borderColor = "#2563EB";
-        bannerStatus.style.color = "#1E40AF";
-        iconeStatus.className = "fas fa-key";
-        iconeStatus.style.color = "#2563EB";
-        tituloStatus.textContent = "VIATURA NO PÁTIO — FLUXO DE SAÍDA";
-        descricaoStatus.textContent = v.modelo + " (" + v.placa + ") está disponível no pátio com " + (v.km_atual || 0).toLocaleString("pt-BR") + " km.";
+      bannerStatus.style.display = "block";
+      bannerStatus.style.background = "#FEF3C7";
+      bannerStatus.style.borderColor = "#D97706";
+      bannerStatus.style.color = "#92400E";
+      iconeStatus.className = "fas fa-sign-in-alt";
+      iconeStatus.style.color = "#D97706";
+      tituloStatus.textContent = "VEÍCULO EM TRÂNSITO — FLUXO DE RETORNO";
+      descricaoStatus.textContent = (dados.marca ? dados.marca + " " : "") + (dados.modelo || "") + " (" + dados.placa + ") está em trânsito. Registrando entrada/retorno ao pátio.";
 
-        painelSaidaOrigem.style.display = "none";
-        secaoSaida.style.display = "block";
-        secaoRetorno.style.display = "none";
+      secaoSaida.style.display = "none";
+      secaoRetorno.style.display = "block";
 
-        if (inputOdometroSaida && (!inputOdometroSaida.value || inputOdometroSaida.value == "0")) {
-          inputOdometroSaida.value = v.km_atual || "";
+      if (dados.saida_origem_id) {
+        inputSaidaOrigem.value = dados.saida_origem_id;
+        document.getElementById("infoFichaOrigem").textContent = dados.ficha_origem || "-";
+        document.getElementById("infoDataHoraSaida").textContent = (dados.data_saida_display || "-") + " às " + (dados.horario_saida || "-");
+        document.getElementById("infoKmSaida").textContent = (dados.km_saida || 0).toLocaleString("pt-BR") + " km";
+        document.getElementById("infoCondutorSaida").textContent = dados.condutor_saida || "-";
+        painelSaidaOrigem.style.display = "block";
+
+        if (inputCondutorChegada && !inputCondutorChegada.value) {
+          inputCondutorChegada.value = dados.condutor_saida || "";
         }
-        if (helpKmSaida) {
-          helpKmSaida.textContent = "Odômetro atual registrado: " + (v.km_atual || 0).toLocaleString("pt-BR") + " km.";
-        }
+      }
 
-        btnSubmit.className = "pf-btn pf-btn-gold";
-        btnSubmit.innerHTML = '<i class="fas fa-key"></i> Confirmar Saída da Viatura';
-
-      } else {
-        // FLUXO DE RETORNO / CHEGADA
-        inputTipo.value = "CHEGADA";
-
-        bannerStatus.style.display = "block";
-        bannerStatus.style.background = "#FEF3C7";
-        bannerStatus.style.borderColor = "#D97706";
-        bannerStatus.style.color = "#92400E";
-        iconeStatus.className = "fas fa-sign-in-alt";
-        iconeStatus.style.color = "#D97706";
-        tituloStatus.textContent = "VIATURA EM TRÂNSITO — FLUXO DE RETORNO";
-        descricaoStatus.textContent = v.modelo + " (" + v.placa + ") está na rua aguardando registro de chegada ao pátio.";
-
-        secaoSaida.style.display = "none";
-        secaoRetorno.style.display = "block";
-
-        var kmSaidaBase = v.km_atual || 0;
-
-        if (v.saida_origem) {
-          inputSaidaOrigem.value = v.saida_origem.id;
-          document.getElementById("infoFichaOrigem").textContent = v.saida_origem.ficha_origem;
-          document.getElementById("infoDataHoraSaida").textContent = (v.saida_origem.data_saida || "-") + " às " + (v.saida_origem.horario_saida || "-");
-          document.getElementById("infoKmSaida").textContent = (v.saida_origem.odometro_saida || 0).toLocaleString("pt-BR") + " km";
-          document.getElementById("infoCondutorSaida").textContent = v.saida_origem.condutor || "-";
-          painelSaidaOrigem.style.display = "block";
-
-          kmSaidaBase = v.saida_origem.odometro_saida || kmSaidaBase;
-
-          if (inputCondutorChegada && !inputCondutorChegada.value) {
-            inputCondutorChegada.value = v.saida_origem.condutor || "";
-          }
-        } else {
-          painelSaidaOrigem.style.display = "none";
-          inputSaidaOrigem.value = "";
-        }
-
-        if (helpKmChegada) {
-          helpKmChegada.textContent = "KM mínimo esperado: " + kmSaidaBase.toLocaleString("pt-BR") + " km.";
-        }
-
-        if (inputOdometroChegada) {
-          inputOdometroChegada.setAttribute("min", kmSaidaBase);
-          inputOdometroChegada.oninput = function() {
-            atualizarCalculoKm(kmSaidaBase);
-          };
+      var kmSaidaBase = dados.km_saida || dados.km_atual || 0;
+      if (helpKmChegada) {
+        helpKmChegada.textContent = "KM mínimo esperado: " + kmSaidaBase.toLocaleString("pt-BR") + " km.";
+      }
+      if (inputOdometroChegada) {
+        inputOdometroChegada.setAttribute("min", kmSaidaBase);
+        inputOdometroChegada.oninput = function() {
           atualizarCalculoKm(kmSaidaBase);
-        }
+        };
+        atualizarCalculoKm(kmSaidaBase);
+      }
 
-        btnSubmit.className = "pf-btn pf-btn-success";
-        btnSubmit.innerHTML = '<i class="fas fa-sign-in-alt"></i> Confirmar Retorno da Viatura';
+      btnSubmit.disabled = false;
+      btnSubmit.style.opacity = "1";
+      btnSubmit.style.cursor = "pointer";
+      btnSubmit.className = "pf-btn pf-btn-success";
+      btnSubmit.innerHTML = '<i class="fas fa-sign-in-alt"></i> Confirmar Retorno do Veículo';
+    }
+
+    if (inputPlaca) {
+      inputPlaca.addEventListener("blur", executarConsultaPlaca);
+      inputPlaca.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          executarConsultaPlaca();
+        }
+      });
+      if (btnConsultar) {
+        btnConsultar.addEventListener("click", executarConsultaPlaca);
       }
     }
 
-    selectViatura.addEventListener("change", atualizarInterface);
-    atualizarInterface();
+    // Se o usuário selecionar pelo select tradicional da frota, sincroniza o campo de placa
+    if (selectViatura) {
+      selectViatura.addEventListener("change", function() {
+        var viaturaId = selectViatura.value;
+        if (viaturaId && viaturasMap[viaturaId]) {
+          var v = viaturasMap[viaturaId];
+          inputPlaca.value = v.placa;
+          inputMarca.value = v.marca || "";
+          inputModelo.value = v.modelo || "";
+          executarConsultaPlaca();
+        }
+      });
+    }
+
+    // Se a página carregou com placa pré-preenchida (ex: query param ou initial)
+    if (inputPlaca && inputPlaca.value.trim().length >= 7) {
+      executarConsultaPlaca();
+    }
   });
 </script>
 {% endblock %}

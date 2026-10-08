@@ -714,8 +714,107 @@ class NutranRelatoriosTestCase(TestCase):
         self.assertContains(response, "Planilha Excel")
 
 
+class RegistroAbertoFichasTestCase(TestCase):
+    def setUp(self):
+        from django.urls import reverse
+        self.reverse = reverse
+        self.usuario = Usuario.objects.create_user(
+            username="vigilante.placa",
+            password="senha123",
+            first_name="Vigilante",
+            last_name="Placa",
+            is_superuser=True,
+        )
+        self.client.force_login(self.usuario)
+        self.ficha = FichaControle.objects.create(
+            data_expediente=date.today(),
+            horario_inicio=time(7, 0),
+            horario_termino=time(19, 0),
+            vigilante=self.usuario,
+            nome_vigilante="Vigilante Placa",
+            status=FichaControle.STATUS_ABERTA,
+        )
 
+    def test_api_consulta_placa_nova_veiculo(self):
+        url = self.reverse("fichas:api_consulta_placa")
+        response = self.client.get(url, {"placa": "BRA2E19"})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data.get("sucesso"))
+        self.assertEqual(data.get("placa"), "BRA2E19")
+        self.assertFalse(data.get("em_transito"))
+        self.assertIn("marca", data)
+        self.assertIn("modelo", data)
 
+    def test_api_consulta_placa_em_transito(self):
+        viatura = Viatura.objects.create(
+            placa="ABC1234",
+            marca="Toyota",
+            modelo="Corolla",
+            status=Viatura.STATUS_EM_USO,
+            km_atual=15000,
+            classificacao=Viatura.CLASSIFICACAO_FROTA,
+        )
+        reg_saida = RegistroUso.objects.create(
+            ficha=self.ficha,
+            viatura=viatura,
+            condutor="APF João",
+            destino="Missão",
+            data_saida=date.today(),
+            horario_saida=time(8, 0),
+            odometro_saida=15000,
+            tipo_movimentacao=RegistroUso.TIPO_SAIDA,
+            status=RegistroUso.STATUS_EM_TRANSITO,
+            registrado_por=self.usuario,
+        )
+        url = self.reverse("fichas:api_consulta_placa")
+        response = self.client.get(url, {"placa": "ABC1234"})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data.get("sucesso"))
+        self.assertTrue(data.get("em_transito"))
+        self.assertEqual(data.get("saida_pendente_id"), reg_saida.pk)
+        self.assertEqual(data.get("condutor_saida"), "APF João")
 
+    def test_movimentacao_criar_com_placa_digitada_cria_viatura_pendente(self):
+        url = self.reverse("fichas:movimentacao_criar", kwargs={"ficha_pk": self.ficha.pk})
+        post_data = {
+            "placa": "RPT9A88",
+            "marca": "Toyota",
+            "modelo": "Hilux 4x4",
+            "cor": "Preto",
+            "tipo_movimentacao": "SAIDA",
+            "condutor_saida": "APF Visitante",
+            "destino": "Apoio Tático",
+            "data_saida": date.today().strftime("%Y-%m-%d"),
+            "horario_saida": "10:00",
+            "odometro_saida": 32000,
+        }
+        response = self.client.post(url, post_data)
+        self.assertEqual(response.status_code, 302)
 
+        viatura = Viatura.objects.filter(placa="RPT9A88").first()
+        self.assertIsNotNone(viatura)
+        self.assertEqual(viatura.classificacao, Viatura.CLASSIFICACAO_PENDENTE)
+        self.assertEqual(viatura.marca, "Toyota")
+        self.assertEqual(viatura.modelo, "Hilux 4x4")
+        self.assertEqual(viatura.status, Viatura.STATUS_EM_USO)
 
+    def test_saida_criar_com_placa_digitada(self):
+        url = self.reverse("fichas:saida_criar", kwargs={"ficha_pk": self.ficha.pk})
+        post_data = {
+            "placa": "EXT5B99",
+            "marca": "Chevrolet",
+            "modelo": "Onix",
+            "condutor": "Visitante Tribunal",
+            "destino": "Auditoria",
+            "data_saida": date.today().strftime("%Y-%m-%d"),
+            "horario_saida": "14:00",
+            "odometro_saida": 10500,
+        }
+        response = self.client.post(url, post_data)
+        self.assertEqual(response.status_code, 302)
+
+        viatura = Viatura.objects.filter(placa="EXT5B99").first()
+        self.assertIsNotNone(viatura)
+        self.assertEqual(viatura.classificacao, Viatura.CLASSIFICACAO_PENDENTE)

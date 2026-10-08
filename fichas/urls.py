@@ -21,4 +21,7 @@ urlpatterns = [
     path("<int:pk>/encerrar/", views.ficha_encerrar, name="encerrar"),
     path("<int:pk>/pdf/", views.exportar_ficha_pdf, name="exportar_pdf"),
     path("<int:pk>/excel/", views.exportar_ficha_excel, name="exportar_excel"),
+
+    # Endpoint AJAX para consulta de placas
+    path("api/consulta-placa/", views.api_consulta_placa, name="api_consulta_placa"),
 ]

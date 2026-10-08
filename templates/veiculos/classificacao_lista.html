@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load permissoes %}
+
+{% block title %}Classificação de Veículos (NUTRAN){% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <span>Gestão de Frota</span>
+  <span>/</span>
+  <strong>Classificação de Veículos</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2>Classificação e Gestão de Veículos</h2>
+    <p>Identificação de frota própria vs. veículos externos a partir dos registros de entrada e saída</p>
+  </div>
+  <div style="display: flex; gap: var(--space-8);">
+    <a href="{% url 'veiculos:lista' %}" class="pf-btn pf-btn-secondary" title="Voltar à frota de viaturas">
+      <i class="fas fa-arrow-left"></i> Frota Oficial
+    </a>
+  </div>
+</div>
+
+<!-- Cards de Resumo -->
+<div class="pf-kpi-grid">
+  <div class="pf-kpi-card">
+    <div class="pf-kpi-info">
+      <span class="pf-kpi-title">Total de Veículos Registrados</span>
+      <span class="pf-kpi-value">{{ total_veiculos }}</span>
+    </div>
+    <i class="fas fa-car pf-kpi-icon"></i>
+  </div>
+
+  <div class="pf-kpi-card {% if total_pendentes > 0 %}kpi-gold{% endif %}">
+    <div class="pf-kpi-info">
+      <span class="pf-kpi-title">Aguardando Classificação</span>
+      <span class="pf-kpi-value" {% if total_pendentes > 0 %}style="color: var(--pf-gold-600);"{% endif %}>{{ total_pendentes }}</span>
+    </div>
+    <i class="fas fa-clock pf-kpi-icon" {% if total_pendentes > 0 %}style="color: var(--pf-gold-500);"{% endif %}></i>
+  </div>
+
+  <div class="pf-kpi-card kpi-success">
+    <div class="pf-kpi-info">
+      <span class="pf-kpi-title">Frota Oficial da Unidade</span>
+      <span class="pf-kpi-value" style="color: var(--pf-green-500);">{{ total_frota }}</span>
+    </div>
+    <i class="fas fa-shield-alt pf-kpi-icon" style="color: var(--pf-green-500);"></i>
+  </div>
+
+  <div class="pf-kpi-card">
+    <div class="pf-kpi-info">
+      <span class="pf-kpi-title">Veículos Externos</span>
+      <span class="pf-kpi-value" style="color: var(--pf-blue-500);">{{ total_externos }}</span>
+    </div>
+    <i class="fas fa-external-link-alt pf-kpi-icon" style="color: var(--pf-blue-500);"></i>
+  </div>
+</div>
+
+<!-- Filtros de Busca -->
+<div class="pf-card" style="margin-bottom: var(--space-24);">
+  <form method="get" class="pf-filter-form" style="display: flex; gap: var(--space-16); align-items: flex-end; flex-wrap: wrap;">
+    <div class="pf-form-group" style="flex: 2; min-width: 240px; margin-bottom: 0;">
+      <label class="pf-label">Buscar Veículo</label>
+      <input type="text" name="q" value="{{ termo }}" class="pf-input" placeholder="Digite a placa, marca ou modelo...">
+    </div>
+
+    <div class="pf-form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+      <label class="pf-label">Filtrar por Classificação</label>
+      <select name="classificacao" class="pf-select">
+        <option value="">Todas as classificações</option>
+        <option value="PENDENTE" {% if classificacao_filtro == 'PENDENTE' %}selected{% endif %}>Aguardando Classificação (NUTRAN)</option>
+        <option value="FROTA" {% if classificacao_filtro == 'FROTA' %}selected{% endif %}>Frota da Unidade</option>
+        <option value="EXTERNA" {% if classificacao_filtro == 'EXTERNA' %}selected{% endif %}>Veículo Externo</option>
+      </select>
+    </div>
+
+    <div style="display: flex; gap: var(--space-8);">
+      <button type="submit" class="pf-btn pf-btn-primary">
+        <i class="fas fa-search"></i> Filtrar
+      </button>
+      {% if termo or classificacao_filtro %}
+      <a href="{% url 'veiculos:classificacao_lista' %}" class="pf-btn pf-btn-secondary" title="Limpar Filtros">
+        <i class="fas fa-times"></i> Limpar
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Tabela de Veículos -->
+<div class="pf-card">
+  <div class="pf-card-header">
+    <div class="pf-card-title">
+      <i class="fas fa-list"></i> Veículos Identificados em Entradas e Saídas
+    </div>
+    <span class="pf-badge pf-badge-info">{{ viaturas.count }} registro(s) encontrado(s)</span>
+  </div>
+
+  <div class="pf-table-wrapper">
+    <table class="pf-table">
+      <thead>
+        <tr>
+          <th>Placa</th>
+          <th>Marca / Modelo</th>
+          <th>Classificação</th>
+          <th>Setor / Lotação</th>
+          <th>Servidor Responsável</th>
+          <th style="text-align: center;">Viagens</th>
+          <th>Origem Cadastro</th>
+          <th style="text-align: right; white-space: nowrap;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in viaturas %}
+        <tr>
+          <td>
+            <strong style="letter-spacing: 1px; font-size: 1.05rem;">{{ v.placa }}</strong>
+            {% if v.divergencia_dados %}
+            <span class="pf-badge pf-badge-danger" title="{{ v.divergencia_dados }}" style="margin-left: var(--space-8);">
+              <i class="fas fa-exclamation-triangle"></i> Divergência
+            </span>
+            {% endif %}
+          </td>
+          <td>
+            <div><strong>{{ v.marca }}</strong> {{ v.modelo }}</div>
+            <small style="color: var(--pf-grey-500);">Cor: {{ v.cor|default:"Não informada" }} • {{ v.get_tipo_display }}</small>
+          </td>
+          <td>
+            {% if v.classificacao == 'FROTA' %}
+              <span class="pf-badge pf-badge-success">
+                <i class="fas fa-shield-alt"></i> Frota Oficial
+              </span>
+            {% elif v.classificacao == 'EXTERNA' %}
+              <span class="pf-badge pf-badge-info">
+                <i class="fas fa-external-link-alt"></i> Veículo Externo
+              </span>
+            {% else %}
+              <span class="pf-badge pf-badge-warning">
+                <i class="fas fa-clock"></i> Pendente de Classificação
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            {% if v.setor_pertencente %}
+              <span class="pf-badge pf-badge-dark">{{ v.setor_pertencente.sigla }}</span>
+              <small>{{ v.setor_pertencente.nome|truncatechars:28 }}</small>
+            {% else %}
+              <span style="color: var(--pf-grey-400); font-style: italic;">Não atribuído</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if v.responsavel_nome %}
+              <strong>{{ v.responsavel_nome }}</strong>
+              {% if v.responsavel_cargo %}<br><small style="color: var(--pf-grey-600);">{{ v.responsavel_cargo }}</small>{% endif %}
+            {% elif v.responsavel_pessoa %}
+              {{ v.responsavel_pessoa.get_full_name|default:v.responsavel_pessoa.username }}
+            {% else %}
+              <span style="color: var(--pf-grey-400); font-style: italic;">Não informado</span>
+            {% endif %}
+          </td>
+          <td style="text-align: center;">
+            <span class="pf-badge pf-badge-secondary" title="Total de viagens registradas">{{ v.total_usos }}</span>
+          </td>
+          <td>
+            <small>
+              {% if v.origem_dados == 'API' %}
+                <i class="fas fa-cloud-download-alt" style="color: var(--pf-blue-500);"></i> API Externa
+              {% elif v.origem_dados == 'MANUAL' %}
+                <i class="fas fa-keyboard" style="color: var(--pf-gold-600);"></i> Manual (Contingência)
+              {% else %}
+                <i class="fas fa-database" style="color: var(--pf-green-500);"></i> Cadastro Interno
+              {% endif %}
+            </small>
+          </td>
+          <td style="text-align: right; white-space: nowrap;">
+            <div class="pf-table-actions">
+              {% tem_perm 'frota.viaturas.editar' as pode_editar %}
+              {% if pode_editar %}
+              <a href="{% url 'veiculos:classificacao_definir' v.pk %}" class="pf-action-btn pf-action-edit" title="Classificar e Definir Viatura" aria-label="Classificar e Definir Viatura">
+                <i class="fas fa-edit"></i>
+              </a>
+              {% endif %}
+              <a href="{% url 'veiculos:detalhe' v.pk %}" class="pf-action-btn pf-action-view" title="Ver Detalhes do Veículo" aria-label="Ver Detalhes do Veículo">
+                <i class="fas fa-eye"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" style="text-align: center; padding: var(--space-32); color: var(--pf-grey-500);">
+            <i class="fas fa-car" style="font-size: 2rem; margin-bottom: var(--space-8); display: block; opacity: 0.5;"></i>
+            Nenhum veículo encontrado com os critérios informados.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

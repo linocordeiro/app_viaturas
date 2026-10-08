@@ -34,15 +34,57 @@
       </div>
     </div>
 
-    <div class="pf-form-grid">
-      <div class="col-6">
-        <div class="pf-field">
-          <label for="{{ form.viatura.id_for_label }}" class="required">{{ form.viatura.label }}</label>
-          {{ form.viatura }}
-          <small class="pf-small">Apenas viaturas disponíveis no pátio são listadas.</small>
-          {% if form.viatura.errors %}<div class="pf-error-text">{{ form.viatura.errors.0 }}</div>{% endif %}
+    <!-- Identificação por Placa ou Seleção de Frota -->
+    <div style="background: #F8FAFD; border: 1px solid var(--pf-blue-200); border-radius: 6px; padding: var(--space-16); margin-bottom: var(--space-16);">
+      <div class="pf-form-grid" style="align-items: flex-end;">
+        <div class="col-4">
+          <div class="pf-field">
+            <label for="id_placa_saida" class="required">Placa do Veículo</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" name="placa" id="id_placa_saida" class="pf-input" placeholder="Ex: BRA2E19 ou ABC1234" maxlength="8" style="text-transform: uppercase; font-weight: 700; letter-spacing: 1px; font-size: 1.1rem;" autocomplete="off" value="{{ form.placa.value|default:'' }}">
+              <button type="button" id="btnConsultarPlacaSaida" class="pf-btn pf-btn-primary" title="Consultar dados da placa" style="padding: 0 16px;">
+                <i class="fas fa-search"></i>
+              </button>
+            </div>
+            <small class="pf-small">Digite a placa para preenchimento automático.</small>
+            {% if form.placa.errors %}<div class="pf-error-text">{{ form.placa.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="col-4">
+          <div class="pf-field">
+            <label for="id_marca_saida">Marca</label>
+            <input type="text" name="marca" id="id_marca_saida" class="pf-input" placeholder="Marca (automático)" value="{{ form.marca.value|default:'' }}">
+            {% if form.marca.errors %}<div class="pf-error-text">{{ form.marca.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="col-4">
+          <div class="pf-field">
+            <label for="id_modelo_saida">Modelo</label>
+            <input type="text" name="modelo" id="id_modelo_saida" class="pf-input" placeholder="Modelo do veículo" value="{{ form.modelo.value|default:'' }}">
+            <input type="hidden" name="cor" id="id_cor_saida" value="{{ form.cor.value|default:'' }}">
+            {% if form.modelo.errors %}<div class="pf-error-text">{{ form.modelo.errors.0 }}</div>{% endif %}
+          </div>
         </div>
       </div>
+
+      <!-- Badge de Origem da Identificação -->
+      <div id="badgeOrigemSaida" style="display: none; margin-top: var(--space-8); font-size: 0.85rem;">
+        <span id="badgeTextoSaida" class="pf-badge pf-badge-secondary"></span>
+        <span id="badgeMsgSaida" style="margin-left: 8px; color: var(--pf-grey-600);"></span>
+      </div>
+
+      <!-- Alternativa Frota -->
+      <div style="margin-top: var(--space-12); padding-top: var(--space-8); border-top: 1px dashed var(--pf-grey-300);">
+        <small style="color: var(--pf-grey-600); cursor: pointer;" id="toggleSelectFrotaSaida">
+          <i class="fas fa-caret-right"></i> Ou selecione diretamente da frota oficial cadastrada...
+        </small>
+        <div id="containerSelectFrotaSaida" style="display: none; margin-top: 8px;">
+          {{ form.viatura }}
+        </div>
+      </div>
+    </div>
 
       <div class="col-6">
         <div class="pf-field">
@@ -98,23 +140,105 @@
 <script>
   document.addEventListener("DOMContentLoaded", function() {
     var odometros = {{ odometros_map|safe }};
-    var selectViatura = document.getElementById("{{ form.viatura.id_for_label }}");
+    var selectViatura = document.getElementById("id_select_viatura");
     var inputOdometro = document.getElementById("{{ form.odometro_saida.id_for_label }}");
-    
+    var inputPlaca = document.getElementById("id_placa_saida");
+    var inputMarca = document.getElementById("id_marca_saida");
+    var inputModelo = document.getElementById("id_modelo_saida");
+    var inputCor = document.getElementById("id_cor_saida");
+    var btnConsultar = document.getElementById("btnConsultarPlacaSaida");
+    var badgeContainer = document.getElementById("badgeOrigemSaida");
+    var badgeTexto = document.getElementById("badgeTextoSaida");
+    var badgeMsg = document.getElementById("badgeMsgSaida");
+
+    var toggleFrota = document.getElementById("toggleSelectFrotaSaida");
+    var containerFrota = document.getElementById("containerSelectFrotaSaida");
+
+    if (toggleFrota && containerFrota) {
+      toggleFrota.addEventListener("click", function() {
+        if (containerFrota.style.display === "none") {
+          containerFrota.style.display = "block";
+          toggleFrota.innerHTML = '<i class="fas fa-caret-down"></i> Ocultar lista da frota';
+        } else {
+          containerFrota.style.display = "none";
+          toggleFrota.innerHTML = '<i class="fas fa-caret-right"></i> Ou selecione diretamente da frota oficial cadastrada...';
+        }
+      });
+    }
+
+    function consultarPlacaSaida() {
+      var placa = inputPlaca.value.trim().toUpperCase();
+      if (!placa || placa.length < 7) return;
+
+      btnConsultar.disabled = true;
+      btnConsultar.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+      badgeContainer.style.display = "block";
+      badgeTexto.className = "pf-badge pf-badge-secondary";
+      badgeTexto.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Consultando...';
+      badgeMsg.textContent = "Buscando dados na base e na API externa...";
+
+      fetch("{% url 'fichas:api_consulta_placa' %}?placa=" + encodeURIComponent(placa))
+        .then(function(resp) { return resp.json(); })
+        .then(function(dados) {
+          btnConsultar.disabled = false;
+          btnConsultar.innerHTML = '<i class="fas fa-search"></i>';
+
+          if (dados.sucesso || dados.marca) {
+            if (dados.marca) inputMarca.value = dados.marca;
+            if (dados.modelo) inputModelo.value = dados.modelo;
+            if (dados.cor) inputCor.value = dados.cor;
+            if (dados.km_atual && inputOdometro && (!inputOdometro.value || inputOdometro.value == "0")) {
+              inputOdometro.value = dados.km_atual;
+            }
+
+            if (dados.origem === "FROTA") {
+              badgeTexto.className = "pf-badge pf-badge-success";
+              badgeTexto.innerHTML = '<i class="fas fa-shield-alt"></i> Frota Oficial';
+            } else if (dados.origem === "CACHE") {
+              badgeTexto.className = "pf-badge pf-badge-info";
+              badgeTexto.innerHTML = '<i class="fas fa-database"></i> Histórico Local';
+            } else {
+              badgeTexto.className = "pf-badge pf-badge-success";
+              badgeTexto.innerHTML = '<i class="fas fa-cloud-check"></i> ' + (dados.provedor || 'API');
+            }
+            badgeMsg.textContent = dados.mensagem || "Veículo identificado com sucesso.";
+          } else {
+            badgeTexto.className = "pf-badge pf-badge-warning";
+            badgeTexto.innerHTML = '<i class="fas fa-keyboard"></i> Modo Contingência';
+            badgeMsg.textContent = dados.mensagem || "Preencha marca e modelo manualmente.";
+          }
+        })
+        .catch(function(err) {
+          btnConsultar.disabled = false;
+          btnConsultar.innerHTML = '<i class="fas fa-search"></i>';
+          badgeContainer.style.display = "block";
+          badgeTexto.className = "pf-badge pf-badge-warning";
+          badgeTexto.innerHTML = '<i class="fas fa-keyboard"></i> Contingência';
+          badgeMsg.textContent = "Falha de conexão com a API. Preencha marca e modelo manualmente.";
+        });
+    }
+
+    if (inputPlaca) {
+      inputPlaca.addEventListener("blur", consultarPlacaSaida);
+      inputPlaca.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          consultarPlacaSaida();
+        }
+      });
+      if (btnConsultar) {
+        btnConsultar.addEventListener("click", consultarPlacaSaida);
+      }
+    }
+
     if (selectViatura && inputOdometro) {
       selectViatura.addEventListener("change", function() {
         var viaturaId = this.value;
         if (viaturaId && odometros[viaturaId] !== undefined) {
           inputOdometro.value = odometros[viaturaId];
-        } else {
-          inputOdometro.value = "";
         }
       });
-      
-      // Auto-preencher caso a viatura já venha selecionada
-      if (selectViatura.value && !inputOdometro.value) {
-        inputOdometro.value = odometros[selectViatura.value] || "";
-      }
     }
   });
 </script>

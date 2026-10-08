@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurações de Consulta de Placas{% endblock %}
+
+{% block breadcrumb %}
+  <span>/</span>
+  <span>Administração</span>
+  <span>/</span>
+  <strong>Integração de Consulta de Placas</strong>
+{% endblock %}
+
+{% block content %}
+<div class="pf-page-header">
+  <div>
+    <h2>Configuração da Integração de Consulta de Placas</h2>
+    <p>Alternância entre provedores (API Gratuita e SERPRO / SENATRAN), proxy institucional e diagnóstico</p>
+  </div>
+  <div style="display: flex; gap: var(--space-8);">
+    <a href="{% url 'usuarios:lista' %}" class="pf-btn pf-btn-secondary">
+      <i class="fas fa-arrow-left"></i> Painel Administrativo
+    </a>
+  </div>
+</div>
+
+<!-- Indicadores de Saúde da Integração -->
+<div class="pf-kpi-grid">
+  <div class="pf-kpi-card">
+    <div class="pf-kpi-info">
+      <span class="pf-kpi-title">Provedor Ativo</span>
+      <span class="pf-kpi-value" style="font-size: 1.35rem; color: var(--pf-blue-500);">
+        {{ config.get_provedor_ativo_display }}
+      </span>
+    </div>
+    <i class="fas fa-satellite-dish pf-kpi-icon" style="color: var(--pf-blue-500);"></i>
+  </div>
+
+  <div class="pf-kpi-card {% if config.circuito_aberto_ate %}kpi-gold{% else %}kpi-success{% endif %}">
+    <div class="pf-kpi-info">
+      <span class="pf-kpi-title">Status do Circuito</span>
+      <span class="pf-kpi-value" style="font-size: 1.35rem; {% if config.circuito_aberto_ate %}color: var(--pf-gold-600);{% else %}color: var(--pf-green-500);{% endif %}">
+        {% if config.circuito_aberto_ate %}
+          Em Contingência
+        {% else %}
+          Operacional
+        {% endif %}
+      </span>
+    </div>
+    <i class="{% if config.circuito_aberto_ate %}fas fa-exclamation-triangle{% else %}fas fa-check-circle{% endif %} pf-kpi-icon"
+       style="{% if config.circuito_aberto_ate %}color: var(--pf-gold-500);{% else %}color: var(--pf-green-500);{% endif %}"></i>
+  </div>
+
+  <div class="pf-kpi-card">
+    <div class="pf-kpi-info">
+      <span class="pf-kpi-title">Placas em Cache Local</span>
+      <span class="pf-kpi-value">{{ total_cache }}</span>
+    </div>
+    <i class="fas fa-database pf-kpi-icon"></i>
+  </div>
+
+  <div class="pf-kpi-card">
+    <div class="pf-kpi-info">
+      <span class="pf-kpi-title">Falhas Consecutivas</span>
+      <span class="pf-kpi-value" {% if config.falhas_consecutivas > 0 %}style="color: var(--pf-red-500);"{% endif %}>
+        {{ config.falhas_consecutivas }}
+      </span>
+    </div>
+    <i class="fas fa-heartbeat pf-kpi-icon"></i>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1.2fr; gap: var(--space-24);">
+  <!-- Formulário de Parâmetros -->
+  <div class="pf-card">
+    <div class="pf-card-header">
+      <div class="pf-card-title">
+        <i class="fas fa-sliders-h"></i> Parâmetros da Integração
+      </div>
+    </div>
+
+    <form method="post" class="pf-form">
+      {% csrf_token %}
+
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-16); background: var(--pf-grey-100); border-radius: 4px; margin-bottom: var(--space-24);">
+        <div>
+          <label style="font-weight: 600; display: block; margin-bottom: 2px;">Habilitar Consulta Externa Automática</label>
+          <small style="color: var(--pf-grey-600);">Quando desmarcado, o sistema opera exclusivamente em preenchimento manual.</small>
+        </div>
+        <div>
+          {{ form.consulta_habilitada }}
+        </div>
+      </div>
+
+      <!-- Seletor do Provedor Ativo -->
+      <div class="pf-form-group" style="margin-bottom: var(--space-24);">
+        <label class="pf-label" style="font-size: 1rem; font-weight: 700;">Provedor de Consulta Selecionado</label>
+        {{ form.provedor_ativo }}
+        <small class="pf-form-help">Escolha qual serviço externo será consultado prioritariamente quando o usuário digitar uma placa.</small>
+        {% if form.provedor_ativo.errors %}<div class="pf-error-message">{{ form.provedor_ativo.errors.0 }}</div>{% endif %}
+      </div>
+
+      <!-- Seção API SERPRO -->
+      <div id="secao_serpro" style="border: 1px solid var(--pf-blue-300); border-radius: 6px; padding: var(--space-16); margin-bottom: var(--space-24); background: #F8FAFD;">
+        <h4 style="color: var(--pf-blue-700); margin-top: 0; margin-bottom: var(--space-12); display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-building"></i> Credenciais e Endpoints SERPRO / SENATRAN
+        </h4>
+        <p style="font-size: 0.85rem; color: var(--pf-grey-600); margin-bottom: var(--space-16);">
+          Configuração do convênio governamental com o Serpro. Requer credenciais de API corporativa (OAuth2).
+        </p>
+
+        <div class="pf-form-row" style="margin-bottom: var(--space-12);">
+          <div class="pf-form-group">
+            <label class="pf-label">Consumer Key</label>
+            {{ form.serpro_consumer_key }}
+            {% if form.serpro_consumer_key.errors %}<div class="pf-error-message">{{ form.serpro_consumer_key.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="pf-form-group">
+            <label class="pf-label">Consumer Secret</label>
+            {{ form.serpro_consumer_secret }}
+            {% if form.serpro_consumer_secret.errors %}<div class="pf-error-message">{{ form.serpro_consumer_secret.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="pf-form-group" style="margin-bottom: var(--space-12);">
+          <label class="pf-label">URL de Autenticação OAuth2 (Token)</label>
+          {{ form.serpro_url_token }}
+          {% if form.serpro_url_token.errors %}<div class="pf-error-message">{{ form.serpro_url_token.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="pf-form-group">
+          <label class="pf-label">URL de Consulta de Veículo</label>
+          {{ form.serpro_url_consulta }}
+          <small class="pf-form-help">Utilize <code>{placa}</code> como marcador na URL.</small>
+          {% if form.serpro_url_consulta.errors %}<div class="pf-error-message">{{ form.serpro_url_consulta.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Seção API Gratuita -->
+      <div id="secao_gratuito" style="border: 1px solid var(--pf-grey-300); border-radius: 6px; padding: var(--space-16); margin-bottom: var(--space-24); background: #FAFAFA;">
+        <h4 style="color: var(--pf-grey-700); margin-top: 0; margin-bottom: var(--space-12); display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-code"></i> Parâmetros da API Gratuita / Aberta
+        </h4>
+        <p style="font-size: 0.85rem; color: var(--pf-grey-600); margin-bottom: var(--space-16);">
+          Permite informar um endpoint REST público ou serviço de homologação. Se a URL estiver vazia, o sistema utiliza o catálogo inteligente embutido com suporte a contingência manual.
+        </p>
+
+        <div class="pf-form-group" style="margin-bottom: var(--space-12);">
+          <label class="pf-label">URL de Consulta (opcional)</label>
+          {{ form.gratuito_url }}
+          <small class="pf-form-help">Use <code>{placa}</code> na URL.</small>
+          {% if form.gratuito_url.errors %}<div class="pf-error-message">{{ form.gratuito_url.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="pf-form-row">
+          <div class="pf-form-group">
+            <label class="pf-label">Token de Acesso (opcional)</label>
+            {{ form.gratuito_token }}
+            {% if form.gratuito_token.errors %}<div class="pf-error-message">{{ form.gratuito_token.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="pf-form-group">
+            <label class="pf-label">Cabeçalho do Token</label>
+            {{ form.gratuito_cabecalho }}
+            {% if form.gratuito_cabecalho.errors %}<div class="pf-error-message">{{ form.gratuito_cabecalho.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Configurações de Rede e Proxy Institucional -->
+      <div style="border-top: 1px solid var(--pf-grey-200); padding-top: var(--space-16); margin-bottom: var(--space-24);">
+        <h4 style="margin-top: 0; margin-bottom: var(--space-12); display: flex; align-items: center; gap: 8px;">
+          <i class="fas fa-network-wired"></i> Rede Corporativa e Proxy Institucional
+        </h4>
+
+        <div class="pf-form-group" style="margin-bottom: var(--space-12);">
+          <label class="pf-label">Proxy Institucional (HTTP / HTTPS)</label>
+          {{ form.proxy_url }}
+          <small class="pf-form-help">Endereço do proxy corporativo da Polícia Federal (ex: <code>http://proxy.pf.gov.br:8080</code>). Se em branco, utilizará as variáveis de ambiente do sistema operacional.</small>
+          {% if form.proxy_url.errors %}<div class="pf-error-message">{{ form.proxy_url.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="pf-form-row">
+          <div class="pf-form-group">
+            <label class="pf-label">Timeout por Consulta (segundos)</label>
+            {{ form.timeout_segundos }}
+            <small class="pf-form-help">Recomendado: 3 a 5 segundos para não atrasar a portaria.</small>
+            {% if form.timeout_segundos.errors %}<div class="pf-error-message">{{ form.timeout_segundos.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="pf-form-group">
+            <label class="pf-label">Validade do Cache Local (dias)</label>
+            {{ form.cache_dias }}
+            <small class="pf-form-help">Período para reutilizar dados locais antes de nova consulta.</small>
+            {% if form.cache_dias.errors %}<div class="pf-error-message">{{ form.cache_dias.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: var(--space-16); justify-content: flex-end;">
+        <button type="submit" class="pf-btn pf-btn-primary">
+          <i class="fas fa-save"></i> Salvar Configurações
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Painel Lateral: Teste em Tempo Real e Cache -->
+  <div>
+    <!-- Teste em Tempo Real -->
+    <div class="pf-card" style="margin-bottom: var(--space-24);">
+      <div class="pf-card-header">
+        <div class="pf-card-title">
+          <i class="fas fa-vial"></i> Teste de Consulta em Tempo Real
+        </div>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--pf-grey-600); margin-bottom: var(--space-16);">
+        Informe uma placa para disparar um teste direto contra o provedor ativo utilizando as credenciais e proxy configurados.
+      </p>
+
+      <div style="display: flex; gap: var(--space-8); margin-bottom: var(--space-12);">
+        <input type="text" id="teste_placa" class="pf-input" placeholder="Ex: RIO2A18" style="text-transform: uppercase;" value="RIO2A18">
+        <button type="button" id="btn_testar_placa" class="pf-btn pf-btn-primary" style="white-space: nowrap;">
+          <i class="fas fa-play"></i> Testar
+        </button>
+      </div>
+
+      <!-- Resultado do Teste -->
+      <div id="resultado_teste" style="display: none; padding: var(--space-12); border-radius: 4px; background: var(--pf-grey-100); border: 1px solid var(--pf-grey-300); font-size: 0.85rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <strong id="teste_status"></strong>
+          <span id="teste_tempo" class="pf-badge pf-badge-secondary"></span>
+        </div>
+        <div id="teste_detalhes"></div>
+      </div>
+    </div>
+
+    <!-- Histórico Recente de Cache -->
+    <div class="pf-card">
+      <div class="pf-card-header">
+        <div class="pf-card-title">
+          <i class="fas fa-history"></i> Últimas Consultas em Cache
+        </div>
+      </div>
+      <div style="font-size: 0.85rem;">
+        {% for item in ultimas_consultadas %}
+        <div style="padding: 8px 0; border-bottom: 1px solid var(--pf-grey-200); display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>{{ item.placa }}</strong> — {{ item.marca }} {{ item.modelo }}
+            <br><small style="color: var(--pf-grey-500);">{{ item.provedor }}</small>
+          </div>
+          <small style="color: var(--pf-grey-500);">{{ item.consultado_em|date:"d/m H:i" }}</small>
+        </div>
+        {% empty %}
+        <p style="color: var(--pf-grey-500); text-align: center; margin: var(--space-16) 0;">
+          Nenhuma placa consultada recentemente.
+        </p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const selectProvedor = document.getElementById("id_provedor_ativo");
+    const secaoSerpro = document.getElementById("secao_serpro");
+    const secaoGratuito = document.getElementById("secao_gratuito");
+
+    function ajustarSecoes() {
+      if (selectProvedor.value === "SERPRO") {
+        secaoSerpro.style.borderColor = "var(--pf-blue-500)";
+        secaoSerpro.style.boxShadow = "0 0 0 2px rgba(51, 99, 204, 0.15)";
+        secaoGratuito.style.borderColor = "var(--pf-grey-300)";
+        secaoGratuito.style.boxShadow = "none";
+      } else {
+        secaoGratuito.style.borderColor = "var(--pf-gold-500)";
+        secaoGratuito.style.boxShadow = "0 0 0 2px rgba(225, 173, 98, 0.2)";
+        secaoSerpro.style.borderColor = "var(--pf-grey-300)";
+        secaoSerpro.style.boxShadow = "none";
+      }
+    }
+
+    selectProvedor.addEventListener("change", ajustarSecoes);
+    ajustarSecoes();
+
+    // Script de Teste AJAX
+    const btnTestar = document.getElementById("btn_testar_placa");
+    const inputPlaca = document.getElementById("teste_placa");
+    const containerResultado = document.getElementById("resultado_teste");
+    const elStatus = document.getElementById("teste_status");
+    const elTempo = document.getElementById("teste_tempo");
+    const elDetalhes = document.getElementById("teste_detalhes");
+
+    btnTestar.addEventListener("click", function() {
+      const placa = inputPlaca.value.trim().toUpperCase();
+      if (!placa) return;
+
+      btnTestar.disabled = true;
+      btnTestar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testando...';
+      containerResultado.style.display = "block";
+      elStatus.innerHTML = '<span style="color: var(--pf-grey-600);"><i class="fas fa-spinner fa-spin"></i> Consultando...</span>';
+      elTempo.textContent = "...";
+      elDetalhes.textContent = "";
+
+      fetch("{% url 'veiculos:configuracao_placa_testar' %}?placa=" + encodeURIComponent(placa))
+        .then(response => response.json())
+        .then(data => {
+          btnTestar.disabled = false;
+          btnTestar.innerHTML = '<i class="fas fa-play"></i> Testar';
+
+          if (data.sucesso) {
+            elStatus.innerHTML = '<span style="color: var(--pf-green-600);"><i class="fas fa-check-circle"></i> Sucesso</span>';
+            elTempo.textContent = (data.tempo_resposta_ms || 0) + " ms";
+            elDetalhes.innerHTML = `
+              <strong>Marca:</strong> ${data.marca}<br>
+              <strong>Modelo:</strong> ${data.modelo}<br>
+              <strong>Cor:</strong> ${data.cor || "Não informada"}<br>
+              <strong>Provedor:</strong> ${data.provedor}
+            `;
+          } else {
+            elStatus.innerHTML = '<span style="color: var(--pf-red-500);"><i class="fas fa-times-circle"></i> Não Localizado</span>';
+            elTempo.textContent = (data.tempo_resposta_ms || 0) + " ms";
+            elDetalhes.innerHTML = `<span style="color: var(--pf-red-600);">${data.mensagem || "Falha na consulta"}</span>`;
+          }
+        })
+        .catch(err => {
+          btnTestar.disabled = false;
+          btnTestar.innerHTML = '<i class="fas fa-play"></i> Testar';
+          elStatus.innerHTML = '<span style="color: var(--pf-red-500);"><i class="fas fa-times-circle"></i> Erro de Rede</span>';
+          elDetalhes.textContent = "Erro ao contactar o servidor: " + err;
+        });
+    });
+  });
+</script>
+{% endblock %}

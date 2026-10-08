@@ -290,3 +290,152 @@ class PermissoesChefiaVeiculosTestCase(TestCase):
         self.assertEqual(r_xls_m.status_code, 200)
 
 
+class RegistroAbertoPlacaTestCase(TestCase):
+    def setUp(self):
+        self.setor, _ = Setor.objects.get_or_create(sigla="NUTRAN", defaults={"nome": "Núcleo de Transportes"})
+        self.admin = Usuario.objects.create_user(
+            username="admin.teste",
+            password="senhaAdmin123",
+            first_name="Admin",
+            matricula="PF00001",
+            is_superuser=True,
+        )
+
+    def test_normalizacao_e_validacao_placa(self):
+        from services.consulta_placa import normalizar_placa, validar_formato_placa
+
+        self.assertEqual(normalizar_placa("rio-2a18"), "RIO2A18")
+        self.assertEqual(normalizar_placa("abc-1234"), "ABC1234")
+        self.assertTrue(validar_formato_placa("RIO2A18"))
+        self.assertTrue(validar_formato_placa("ABC1234"))
+        self.assertFalse(validar_formato_placa("123"))
+        self.assertFalse(validar_formato_placa("INVALIDA"))
+
+    def test_orquestrador_consulta_catalogo_e_cache(self):
+        from services.consulta_placa import consultar_placa
+        from veiculos.models import PlacaConsultada
+
+        # Consulta placa conhecida no catálogo
+        res = consultar_placa("RIO2A18", forcar_api=True)
+        self.assertTrue(res.sucesso)
+        self.assertEqual(res.marca, "Toyota")
+        self.assertIn("Hilux", res.modelo)
+
+        # Verifica se alimentou o cache
+        cache = PlacaConsultada.objects.filter(placa="RIO2A18").first()
+        self.assertIsNotNone(cache)
+        self.assertEqual(cache.marca, "Toyota")
+
+        # Segunda consulta sem forçar API deve vir do cache
+        res_cache = consultar_placa("RIO2A18", forcar_api=False)
+        self.assertTrue(res_cache.sucesso)
+        self.assertEqual(res_cache.origem, "CACHE")
+
+    def test_classificacao_nutran(self):
+        # Cria veículo pendente registrado a partir de entrada/saída
+        v = Viatura.objects.create(
+            placa="RIO2A18",
+            marca="Toyota",
+            modelo="Hilux SW4",
+            classificacao=Viatura.CLASSIFICACAO_PENDENTE,
+            origem_dados=Viatura.ORIGEM_API,
+            status=Viatura.STATUS_DISPONIVEL,
+        )
+
+        from django.urls import reverse
+        self.client.login(username="admin.teste", password="senhaAdmin123")
+
+        # 1. Acesso à listagem de classificação
+        r_lista = self.client.get(reverse("veiculos:classificacao_lista"))
+        self.assertEqual(r_lista.status_code, 200)
+        self.assertContains(r_lista, "RIO2A18")
+        self.assertContains(r_lista, "Pendente de Classificação")
+
+        # 2. Definição pelo NUTRAN: marca como Frota da Unidade, define setor e responsável (nome e cargo)
+        r_post = self.client.post(
+            reverse("veiculos:classificacao_definir", kwargs={"pk": v.pk}),
+            {
+                "classificacao": Viatura.CLASSIFICACAO_FROTA,
+                "setor_pertencente": self.setor.pk,
+                "responsavel_nome": "Agente Carlos Silva",
+                "responsavel_cargo": "Agente de Polícia Federal",
+                "tipo": Viatura.TIPO_OSTENSIVA,
+                "cor": "Preta",
+                "ano_fabricacao": 2023,
+                "ano_modelo": 2023,
+                "chassi": "9BRXXXXXXXXXX",
+                "observacoes": "Classificada formalmente pela DTI/NUTRAN.",
+            },
+            follow=True,
+        )
+        self.assertEqual(r_post.status_code, 200)
+
+        v.refresh_from_db()
+        self.assertEqual(v.classificacao, Viatura.CLASSIFICACAO_FROTA)
+        self.assertEqual(v.setor_pertencente, self.setor)
+        self.assertEqual(v.responsavel_nome, "Agente Carlos Silva")
+        self.assertEqual(v.responsavel_cargo, "Agente de Polícia Federal")
+        self.assertEqual(v.identificacao_responsavel, "Agente Carlos Silva (Agente de Polícia Federal)")
+        self.assertEqual(v.classificado_por, self.admin)
+
+    def test_configuracao_consulta_placa_view_e_teste(self):
+        from django.urls import reverse
+        self.client.login(username="admin.teste", password="senhaAdmin123")
+
+        # 1. Acesso à tela de configuração
+        r_cfg = self.client.get(reverse("veiculos:configuracao_placa"))
+        self.assertEqual(r_cfg.status_code, 200)
+        self.assertContains(r_cfg, "Integração de Consulta de Placas")
+
+        # 2. Alteração de parâmetros: escolhe SERPRO e define proxy institucional
+        r_post = self.client.post(
+            reverse("veiculos:configuracao_placa"),
+            {
+                "consulta_habilitada": "on",
+                "provedor_ativo": "SERPRO",
+                "proxy_url": "http://proxy.pf.gov.br:8080",
+                "timeout_segundos": 4,
+                "cache_dias": 60,
+                "serpro_url_token": "https://gateway.apiserpro.serpro.gov.br/token",
+                "serpro_url_consulta": "https://gateway.apiserpro.serpro.gov.br/consulta-veiculo/v1/veiculo/{placa}",
+                "serpro_consumer_key": "chave_teste_123",
+                "serpro_consumer_secret": "segredo_teste_456",
+            },
+            follow=True,
+        )
+        self.assertEqual(r_post.status_code, 200)
+
+        from veiculos.models import ConfiguracaoConsultaPlaca
+        cfg = ConfiguracaoConsultaPlaca.obter_configuracao()
+        self.assertEqual(cfg.provedor_ativo, "SERPRO")
+        self.assertEqual(cfg.proxy_url, "http://proxy.pf.gov.br:8080")
+        self.assertEqual(cfg.timeout_segundos, 4)
+
+        # 3. Teste do endpoint AJAX de teste de placa
+        r_ajax = self.client.get(f"{reverse('veiculos:configuracao_placa_testar')}?placa=RIO2A18")
+        self.assertEqual(r_ajax.status_code, 200)
+        dados = r_ajax.json()
+        self.assertIn("sucesso", dados)
+        self.assertIn("tempo_resposta_ms", dados)
+
+    def test_reconciliacao_sinaliza_divergencia(self):
+        from django.core.management import call_command
+        # Veículo criado manualmente com dados divergentes da API para testar a sinalização
+        v = Viatura.objects.create(
+            placa="RIO2A18",
+            marca="Fiat",
+            modelo="Uno Mille",
+            origem_dados=Viatura.ORIGEM_MANUAL,
+            classificacao=Viatura.CLASSIFICACAO_PENDENTE,
+        )
+
+        call_command("reconciliar_placas", placa="RIO2A18")
+
+        v.refresh_from_db()
+        self.assertTrue(bool(v.divergencia_dados))
+        self.assertIn("Divergência detectada", v.divergencia_dados)
+        self.assertIn("Fiat", v.divergencia_dados)
+        self.assertIn("Toyota", v.divergencia_dados)
+
+
+

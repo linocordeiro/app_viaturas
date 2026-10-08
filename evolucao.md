@@ -25,6 +25,36 @@
 
 ## Histórico de Commits
 
+### Implementação de Registro Aberto por Placa, Painel NUTRAN e Integração Multi-Provedor com Proxy Institucional · 07/10/2026
+
+**Tipo:** `feat` / `refactor` — Migração para Registro Aberto por Placa com Fallback Resiliente e Classificação NUTRAN  
+**Branch:** `ft_sinesp_api`
+
+**Descrição:**
+- **Registro Aberto e Consulta Externa de Placas (`services/consulta_placa/`):**
+  - Implementada camada de serviços desacoplada com padrão Factory/Estratégia para consulta veicular por placa (formato antigo `ABC-1234` e Mercosul `ABC1D23`).
+  - Provedor gratuito/aberto (`ProvedorGratuitoPlaca`) configurado como padrão inicial, com suporte a catálogo inteligente offline e contingência operacional.
+  - Provedor oficial SERPRO/SENATRAN (`ProvedorSerproPlaca`) com fluxo OAuth2 Client Credentials implementado e pronto para ativação mediante convênio.
+  - Suporte completo a **proxy institucional corporativo** configurável via banco de dados ou variáveis de ambiente (`HTTP_PROXY`, `HTTPS_PROXY`).
+  - Cache local inteligente (`PlacaConsultada`) com TTL ajustável e *Circuit Breaker* automático para proteção de rede.
+- **Painel e Fluxo de Classificação NUTRAN (`veiculos/`):**
+  - Módulo de veículos preservado e integrado dinamicamente: novos veículos criados a partir da portaria recebem status `PENDENTE` de classificação.
+  - Interface dedicada para operadores com perfil `nutran` identificar quais viaturas pertencem à frota oficial da unidade (`FROTA`) e quais são veículos de apoio ou visitantes (`EXTERNA`).
+  - Permite ao NUTRAN definir o setor de lotação e o responsável nominal (nome e cargo do policial/servidor).
+  - Tabela com KPIs operacionais, badges semânticos e conformidade estrita com o padrão de botões de ação Frontline PF (`.pf-table-actions`, apenas ícone e atributos de acessibilidade `title`/`aria-label`).
+- **Painel Administrativo Gráfico de Integração de Placas:**
+  - Interface gráfica para administradores alternarem entre API Gratuita e API SERPRO, configurarem credenciais, proxy institucional e testarem consultas em tempo real via AJAX.
+- **Sinalização de Divergências e Reconciliação:**
+  - Implementado comando de gestão `python manage.py reconciliar_placas` que compara dados cadastrados em contingência manual com retornos de APIs externas.
+  - Divergências são registradas e sinalizadas no campo `divergencia_dados` e em alertas visuais na Ficha de Controle, preservando a integridade das informações registradas pelo operador sem sobrescrita destrutiva.
+- **Formulários e Operação de Portaria (`fichas/`):**
+  - Formulários de Movimentação e Saída atualizados para digitação livre de placa com busca assíncrona instantânea (`api_consulta_placa`).
+  - Detecção inteligente de status em trânsito com pré-preenchimento automático de retorno e cálculo de quilometragem.
+- **Testes Automatizados:**
+  - Suíte de testes unitários e de integração ampliada em `veiculos/tests.py` e `fichas/tests.py`, totalizando 50 testes executados com 100% de sucesso.
+
+---
+
 ### Integração da Branch ft_review com Resolução de Conflitos e Padronização de Tabelas · 04/10/2026
 
 **Tipo:** `merge` / `refactor` / `feat` — Conclusão do Merge da Branch `ft_review` na `develop`  
