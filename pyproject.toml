@@ -3,18 +3,28 @@ name = "app-viaturas"
 version = "1.0.0"
 description = "Sistema de Controle de Entrada e Saída de Viaturas da Polícia Federal"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "django>=5.2",
-    "pillow>=11.0",
-    "reportlab>=4.0",
     "openpyxl>=3.1",
     "python-dotenv>=1.0",
+    "reportlab>=5.0.1",
+    "waitress>=3.0.2",
+    "whitenoise>=6.12.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pre-commit==4.6.2",
+    "ruff>=0.3.7",
+]
+
+[tool.uv]
+package = false
 
 [tool.ruff]
 line-length = 88
-target-version = "py313"
+target-version = "py312"
 fix = true
 show-fixes = true
 indent-width = 4
@@ -65,8 +75,8 @@ select = [
     "N",
 ]
 ignore = [
-    "T201",    # Permite o uso de print()
-    "COM812",  # Evita conflito de virgula final com o formatador
+    "T201",   # Permite o uso de print()
+    "COM812", # Evita conflito de virgula final com o formatador
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -92,4 +102,11 @@ line-ending = "lf"
 
 [tool.ruff.lint.isort]
 # Define os pacotes locais do projeto APP_VIATURAS
-known-first-party = ["core", "usuarios", "veiculos", "fichas", "dashboard", "services"]
+known-first-party = [
+    "core",
+    "usuarios",
+    "veiculos",
+    "fichas",
+    "dashboard",
+    "services",
+]
