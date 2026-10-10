@@ -239,7 +239,7 @@
 
     <!-- Botões de Ação -->
     <div style="display: flex; justify-content: flex-end; gap: var(--space-8); margin-top: var(--space-24); border-top: 1px solid var(--pf-grey-200); padding-top: var(--space-16);">
-      <a href="{% url 'fichas:detalhe' ficha.pk %}" class="pf-btn pf-btn-ghost">Cancelar</a>
+      <a href="{% url 'fichas:detalhe' ficha.pk %}" class="pf-btn pf-btn-cancel">Cancelar</a>
       <button type="submit" id="btnSubmit" class="pf-btn pf-btn-primary" disabled style="opacity: 0.6; cursor: not-allowed;">
         <i class="fas fa-check"></i> Selecione uma Viatura
       </button>
