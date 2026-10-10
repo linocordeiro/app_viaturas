@@ -1,0 +1,17 @@
+# Mantém uv.lock e requirements.txt (produção/pip) sincronizados com o pyproject.toml.
+# Ativação, uma vez por máquina: uv run pre-commit install
+repos:
+  - repo: local
+    hooks:
+      - id: uv-lock
+        name: uv lock
+        entry: uv lock
+        language: system
+        files: ^(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
+      - id: uv-export
+        name: uv export (requirements.txt)
+        entry: uv export --no-dev --no-hashes --format requirements-txt --quiet -o requirements.txt
+        language: system
+        files: ^(pyproject\.toml|uv\.lock|requirements\.txt)$
+        pass_filenames: false
