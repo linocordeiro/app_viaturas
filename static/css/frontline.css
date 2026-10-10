@@ -412,6 +412,160 @@ small, .pf-small {
   text-decoration: underline;
 }
 
+/* Modal nativo (<dialog>) Frontline — centralizado, grid de 8px */
+.pf-dialog {
+  /* margin: auto restaura a centralização nativa anulada pelo reset global (* { margin: 0 }) */
+  margin: auto;
+  width: calc(100% - var(--space-32));
+  max-width: 448px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  color: var(--pf-grey-700);
+  box-shadow: 0 8px 24px rgba(17, 18, 19, 0.4);
+}
+
+.pf-dialog::backdrop {
+  background: rgba(17, 18, 19, 0.7);
+  backdrop-filter: blur(2px);
+}
+
+.pf-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  padding: var(--space-16) var(--space-24);
+  background-color: var(--pf-black);
+  border-bottom: 3px solid var(--pf-gold-500);
+  color: #FFFFFF;
+}
+
+.pf-dialog-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.pf-dialog-title i {
+  color: var(--pf-gold-500);
+  font-size: 16px;
+}
+
+/* h5 Frontline: Roboto Medium 16px / 22px */
+.pf-dialog-title h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+  color: #FFFFFF;
+}
+
+.pf-dialog-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #FFFFFF;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.pf-dialog-close:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.pf-dialog-body {
+  padding: var(--space-24);
+}
+
+.pf-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-8);
+  padding: var(--space-16) var(--space-24);
+  background-color: var(--pf-grey-100);
+  border-top: 1px solid var(--pf-grey-200);
+}
+
+/* Lista de contatos (modal de suporte) */
+.pf-contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pf-contact-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+}
+
+.pf-contact-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--pf-blue-100);
+  color: var(--pf-blue-700);
+  font-size: 16px;
+}
+
+.pf-contact-icon.pf-contact-whatsapp {
+  background-color: var(--pf-green-100);
+  color: var(--pf-green-600);
+  font-size: 24px;
+}
+
+/* Body Small Frontline: 12px / 16px, sem caixa alta */
+.pf-contact-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--pf-grey-600);
+}
+
+/* h5 Frontline: 16px / 24px */
+.pf-contact-value {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  color: var(--pf-black);
+}
+
+.pf-contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  color: var(--pf-green-600);
+  text-decoration: none;
+}
+
+.pf-contact-link i {
+  font-size: 12px;
+}
+
+.pf-contact-link:hover {
+  color: var(--pf-green-700);
+  text-decoration: underline;
+}
+
 /* ==========================================================================
    COMPONENTES UI FRONTLINE PF
    ========================================================================== */
@@ -448,13 +602,13 @@ small, .pf-small {
   color: var(--pf-blue-500);
 }
 
-/* Botões Frontline (Large 32px padrão, Small 24px) */
+/* Botões Frontline: altura única de 36px (igual aos inputs) para botões com texto */
 .pf-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-8);
-  height: 32px;
+  height: 36px;
   padding: 0 var(--space-16);
   font-family: inherit;
   font-size: 13px;
@@ -467,7 +621,6 @@ small, .pf-small {
 }
 
 .pf-btn-sm {
-  height: 24px;
   padding: 0 var(--space-8);
   font-size: 12px;
 }
@@ -489,7 +642,6 @@ small, .pf-small {
 }
 
 .pf-btn-lg {
-  height: 32px;
   padding: 0 var(--space-20, 20px);
   font-size: 14px;
 }
@@ -542,6 +694,32 @@ small, .pf-small {
 
 .pf-btn-danger:hover {
   background-color: var(--pf-red-600);
+}
+
+/* Botão Cancelar: esquema danger com borda fina */
+.pf-btn-cancel {
+  background-color: var(--pf-red-100);
+  color: var(--pf-red-500);
+  border: 1px solid var(--pf-red-500);
+}
+
+.pf-btn-cancel:hover {
+  background-color: var(--pf-red-500);
+  color: #FFFFFF;
+  border-color: var(--pf-red-600);
+}
+
+/* Botão Sair (navbar escura) */
+.pf-btn-logout {
+  padding: 0 var(--space-24);
+  background-color: transparent;
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.pf-btn-logout:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: #FFFFFF;
 }
 
 .pf-btn-success {

@@ -119,7 +119,7 @@
       </div>
     </div>
     <div class="col-4" style="display: flex; gap: var(--space-8);">
-      <button type="submit" class="pf-btn pf-btn-secondary" style="flex: 1;">
+      <button type="submit" class="pf-btn pf-btn-secondary">
         <i class="fas fa-search"></i> Pesquisar
       </button>
       {% if termo %}
@@ -205,7 +205,7 @@
                     A nova senha de acesso passará a ser: <strong style="font-size: 15px; font-family: monospace;">mudar@123</strong>
                   </div>
                   <div style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
-                    <button type="button" class="pf-btn pf-btn-secondary" onclick="document.getElementById('modalReset{{ u.pk }}').close()">Cancelar</button>
+                    <button type="button" class="pf-btn pf-btn-cancel" onclick="document.getElementById('modalReset{{ u.pk }}').close()">Cancelar</button>
                     <form method="post" action="{% url 'usuarios:resetar_senha' u.pk %}" style="display: inline;">
                       {% csrf_token %}
                       <button type="submit" class="pf-btn" style="background-color: #B45309; border-color: #B45309; color: #fff;">

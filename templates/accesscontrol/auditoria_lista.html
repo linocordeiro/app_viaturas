@@ -10,6 +10,79 @@
   <strong>Logs do Sistema</strong>
 {% endblock %}
 
+{% block extra_head %}
+<style>
+  .log-modal-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin-left: var(--space-16);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #FFFFFF;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+  }
+  .log-modal-close:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  .log-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-16) var(--space-24);
+    margin-bottom: var(--space-24);
+  }
+  .log-modal-grid .log-field-full {
+    grid-column: span 2;
+  }
+  .log-field-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--pf-grey-500);
+  }
+  .log-field-value {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--pf-black);
+    word-break: break-word;
+  }
+  .log-field-mono {
+    display: inline-block;
+    font-family: Consolas, monospace;
+    font-size: 13px;
+    padding: 2px 8px;
+    background: var(--pf-grey-100);
+    border: 1px solid var(--pf-grey-200);
+    border-radius: 4px;
+    color: var(--pf-grey-700);
+    word-break: break-all;
+  }
+  .log-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-8);
+    padding: var(--space-16) var(--space-24);
+    background: var(--pf-grey-100);
+    border-top: 1px solid var(--pf-grey-200);
+  }
+  @media (max-width: 600px) {
+    .log-modal-grid { grid-template-columns: 1fr; }
+    .log-modal-grid .log-field-full { grid-column: auto; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- Cabeçalho da Página -->
 <div class="pf-page-header">
@@ -175,7 +248,7 @@
               <small>{{ log.ip|default:"-" }}</small>
             </td>
             <td style="text-align: center; vertical-align: middle;">
-              <button type="button" class="pf-btn pf-btn-sm pf-btn-ghost btn-detalhes-log" 
+              <button type="button" class="pf-action-btn pf-action-view btn-detalhes-log"
                       data-id="{{ log.pk }}"
                       data-codigo="{{ log.codigo }}"
                       data-desc="{{ log.descricao }}"
@@ -185,8 +258,9 @@
                       data-metodo="{{ log.metodo_http }}"
                       data-ip="{{ log.ip|default:'-' }}"
                       data-objeto="{{ log.objeto_repr|default:'-' }}"
-                      title="Ver dados completos da alteração">
-                <i class="fas fa-eye"></i> Ver
+                      title="Ver dados completos da alteração"
+                      aria-label="Ver dados completos">
+                <i class="fas fa-eye"></i>
               </button>
 
             </td>
@@ -246,46 +320,46 @@
         <i class="fas fa-shield-alt" style="color: var(--pf-gold-500); font-size: 20px;"></i>
         <h3 style="margin: 0; color: #FFF; font-size: 16px;">Inspeção de Log de Auditoria</h3>
       </div>
-      <button type="button" id="btn-fechar-modal" style="background: transparent; border: none; color: #FFF; font-size: 20px; cursor: pointer;">
+      <button type="button" id="btn-fechar-modal" class="log-modal-close" title="Fechar" aria-label="Fechar">
         &times;
       </button>
     </div>
 
     <!-- Corpo do Modal -->
     <div style="padding: var(--space-24); overflow-y: auto; flex: 1;">
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-12); margin-bottom: var(--space-16); font-size: 13px;">
+      <div class="log-modal-grid">
         <div>
-          <span style="color: var(--pf-grey-600); font-size: 11px; text-transform: uppercase; font-weight: 700; display: block;">Código da Ação</span>
+          <span class="log-field-label">Código da Ação</span>
           <span id="modal-codigo" class="pf-badge pf-badge-dark" style="font-family: monospace; font-size: 13px;">-</span>
         </div>
         <div>
-          <span style="color: var(--pf-grey-600); font-size: 11px; text-transform: uppercase; font-weight: 700; display: block;">Data e Horário</span>
-          <strong id="modal-data">-</strong>
+          <span class="log-field-label">Data e Horário</span>
+          <div id="modal-data" class="log-field-value">-</div>
         </div>
         <div>
-          <span style="color: var(--pf-grey-600); font-size: 11px; text-transform: uppercase; font-weight: 700; display: block;">Usuário / Operador</span>
-          <span id="modal-usuario">-</span>
+          <span class="log-field-label">Usuário / Operador</span>
+          <div id="modal-usuario" class="log-field-value">-</div>
         </div>
         <div>
-          <span style="color: var(--pf-grey-600); font-size: 11px; text-transform: uppercase; font-weight: 700; display: block;">Endereço IP</span>
-          <code id="modal-ip">-</code>
+          <span class="log-field-label">Endereço IP</span>
+          <code id="modal-ip" class="log-field-mono">-</code>
         </div>
-        <div style="grid-column: span 2;">
-          <span style="color: var(--pf-grey-600); font-size: 11px; text-transform: uppercase; font-weight: 700; display: block;">Ação Executada</span>
-          <div id="modal-desc" style="font-weight: 500; margin-top: 2px;">-</div>
+        <div class="log-field-full">
+          <span class="log-field-label">Ação Executada</span>
+          <div id="modal-desc" class="log-field-value">-</div>
         </div>
-        <div style="grid-column: span 2;">
-          <span style="color: var(--pf-grey-600); font-size: 11px; text-transform: uppercase; font-weight: 700; display: block;">URL / Rota do Sistema</span>
-          <code id="modal-url" style="word-break: break-all; display: block; margin-top: 2px; padding: 4px 8px; background: var(--pf-grey-100); border-radius: 4px;">-</code>
+        <div class="log-field-full">
+          <span class="log-field-label">URL / Rota do Sistema</span>
+          <code id="modal-url" class="log-field-mono" style="display: block;">-</code>
         </div>
-        <div style="grid-column: span 2;">
-          <span style="color: var(--pf-grey-600); font-size: 11px; text-transform: uppercase; font-weight: 700; display: block;">Objeto / Registro Afetado</span>
-          <div id="modal-objeto" style="font-weight: 500; margin-top: 2px;">-</div>
+        <div class="log-field-full">
+          <span class="log-field-label">Objeto / Registro Afetado</span>
+          <div id="modal-objeto" class="log-field-value">-</div>
         </div>
       </div>
 
       <div>
-        <span style="color: var(--pf-grey-600); font-size: 11px; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 6px;">
+        <span class="log-field-label">
           <i class="fas fa-code"></i> Dados e Payload da Alteração (JSON)
         </span>
         <pre id="modal-detalhes" style="background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 4px; font-family: Consolas, monospace; font-size: 12px; max-height: 240px; overflow-y: auto; margin: 0; white-space: pre-wrap; word-break: break-all;"></pre>
@@ -293,7 +367,7 @@
     </div>
 
     <!-- Rodapé do Modal -->
-    <div style="padding: var(--space-12) var(--space-24); background: var(--pf-grey-100); display: flex; justify-content: flex-end; border-top: 1px solid var(--pf-grey-200);">
+    <div class="log-modal-footer">
       <button type="button" id="btn-fechar-modal-bottom" class="pf-btn pf-btn-secondary">
         Fechar
       </button>

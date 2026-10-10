@@ -61,7 +61,7 @@
         </div>
         <form action="{% url 'usuarios:logout' %}" method="post" style="display:inline;">
           {% csrf_token %}
-          <button type="submit" class="pf-btn pf-btn-sm pf-btn-ghost" style="color:#FFF;" title="Sair do sistema">
+          <button type="submit" class="pf-btn pf-btn-sm pf-btn-logout" title="Sair do sistema">
             <i class="fas fa-sign-out-alt"></i> Sair
           </button>
         </form>
@@ -190,9 +190,50 @@
     <div class="pf-footer-links">
       <span>Versão 1.0.0</span>
       <span>•</span>
-      <a href="mailto:nti.srac@pf.gov.br"><i class="fas fa-headset"></i> Suporte Técnico</a>
+      <a href="#" onclick="event.preventDefault(); document.getElementById('modalSuporte').showModal();"><i class="fas fa-headset"></i> Suporte Técnico</a>
     </div>
   </footer>
+
+  <!-- Modal de Contatos do Suporte Técnico (NTI) -->
+  <dialog id="modalSuporte" class="pf-dialog" aria-labelledby="modalSuporteTitulo">
+    <div class="pf-dialog-header">
+      <div class="pf-dialog-title">
+        <i class="fas fa-headset"></i>
+        <h3 id="modalSuporteTitulo">Suporte Técnico — NTI</h3>
+      </div>
+      <button type="button" class="pf-dialog-close" title="Fechar" aria-label="Fechar" onclick="document.getElementById('modalSuporte').close()">&times;</button>
+    </div>
+    <div class="pf-dialog-body">
+      <ul class="pf-contact-list">
+        <li>
+          <span class="pf-contact-icon"><i class="fas fa-phone-alt"></i></span>
+          <div>
+            <span class="pf-contact-label">Suporte</span>
+            <span class="pf-contact-value">(68) 3212-1212</span>
+          </div>
+        </li>
+        <li>
+          <span class="pf-contact-icon"><i class="fas fa-user-tie"></i></span>
+          <div>
+            <span class="pf-contact-label">Chefia</span>
+            <span class="pf-contact-value">(68) 3212-1213</span>
+          </div>
+        </li>
+        <li>
+          <span class="pf-contact-icon pf-contact-whatsapp"><i class="fab fa-whatsapp"></i></span>
+          <div>
+            <span class="pf-contact-label">WhatsApp</span>
+            <a class="pf-contact-value pf-contact-link" href="https://web.whatsapp.com/send?phone=556832121212" target="_blank" rel="noopener noreferrer" title="Abrir conversa no WhatsApp Web">
+              +55 68 3212-1212 <i class="fas fa-external-link-alt"></i>
+            </a>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="pf-dialog-footer">
+      <button type="button" class="pf-btn pf-btn-secondary" onclick="document.getElementById('modalSuporte').close()">Fechar</button>
+    </div>
+  </dialog>
 
   <!-- Scripts -->
   <script src="{% static 'js/frontline.js' %}"></script>

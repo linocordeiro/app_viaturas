@@ -60,7 +60,7 @@
             <p>Todas as viaturas estão no pátio. Confirma o encerramento?</p>
           {% endif %}
           <div style="display: flex; gap: 16px; margin-top: 24px; justify-content: flex-end;">
-            <button type="button" class="pf-btn pf-btn-secondary" onclick="document.getElementById('modalEncerrar').close()">Cancelar</button>
+            <button type="button" class="pf-btn pf-btn-cancel" onclick="document.getElementById('modalEncerrar').close()">Cancelar</button>
             <form method="post" action="{% url 'fichas:encerrar' ficha.pk %}" style="display: inline;">
               {% csrf_token %}
               <button type="submit" class="pf-btn pf-btn-danger">
